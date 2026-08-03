@@ -13,7 +13,6 @@ tmp/
 # Sensitive or internal source material
 *.base
 *.csv
-*.pdf
 *.doc
 *.docx
 *.zip

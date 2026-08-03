@@ -2,7 +2,7 @@
 
 > MeetInfluencer 实习项目作品集（脱敏版）
 
-本仓库以《实习生工作手册》为主线，整理实习期间参与的产品测试、问题跟进、交互原型和需求分析工作。它不是 MeetInfluencer 正式产品源码，也不包含生产环境代码、账号密码、内部地址、真实用户数据或完整内部业务文档。
+本仓库以《实习生工作手册》为主线，整理实习期间参与的产品测试、问题跟进、交互原型和需求分析工作。它不是 MeetInfluencer 正式产品源码。仓库包含经授权原样归档的内部 PDF，因此必须保持 Private，不得公开分享或启用公共 Pages。
 
 ## 交互 Demo
 
@@ -79,13 +79,14 @@ GitHub 的文件浏览页面不会直接运行 HTML。本仓库保持 Private，
 - [测试与问题跟进方法](docs/testing-and-issue-tracking.md)
 - [需求与验收概要](docs/requirements-overview.md)
 - [资料来源与脱敏说明](docs/source-manifest.md)
+- [原始 PDF 资料说明](docs/pdfs/README.md)
 
 ## 信息安全
 
-- 不提交账号、密码、令牌、Cookie 或私钥。
-- 不提交内部 IP、后台入口或仅限组织访问的链接。
-- 不提交真实用户、达人、广告主或员工个人信息。
-- 不提交未经脱敏的 PDF、CSV、Base 快照或截图。
+- `demos/` 与派生 Markdown 已做去标识化处理，示例邮箱使用 `example.com`。
+- `docs/pdfs/` 按仓库所有者要求保留原始 PDF，可能含测试信息、内部地址、截图和未公开需求。
+- CSV、Base、ZIP、DOC/DOCX 与凭据文件仍被 `.gitignore` 阻止误提交。
+- 不要将本仓库改为 Public，也不要公开 Fork、Release 或 GitHub Pages。
 - Demo 中的姓名、邮箱、账号、时间和审核记录均为示例数据。
 
 详见 [NOTICE.md](NOTICE.md)。

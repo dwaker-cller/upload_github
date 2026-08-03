@@ -1,0 +1,23 @@
+# Operating systems and editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local servers and tooling
+node_modules/
+.cache/
+tmp/
+*.log
+
+# Sensitive or internal source material
+*.base
+*.csv
+*.pdf
+*.doc
+*.docx
+*.zip
+.env
+.env.*
+*.pem
+*.key

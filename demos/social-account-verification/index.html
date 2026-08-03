@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MeetInfluencer · Social Account Verification Prototype</title>
+  <style>
+    :root {
+      --ink: #101828;
+      --muted: #667085;
+      --line: #e6eaf2;
+      --panel: #ffffff;
+      --canvas: #f5f6fb;
+      --creator-pink: #ea4897;
+      --creator-purple: #8d36e8;
+      --creator-soft: #fff0f7;
+      --creator-shadow: 0 16px 40px rgba(73, 44, 106, .09);
+      --ops-blue: #409eff;
+      --ops-dark: #061c2f;
+      --success: #12a05c;
+      --success-soft: #eaf8f0;
+      --warning: #e89012;
+      --warning-soft: #fff5e5;
+      --danger: #ef4e5e;
+      --danger-soft: #fff0f1;
+      --radius: 18px;
+      --font: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-width: 1180px; min-height: 100%; color: var(--ink); font-family: var(--font); background: var(--canvas); }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    a { color: inherit; }
+    .hidden { display: none !important; }
+
+    /* Prototype cover */
+    .cover {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 10% 20%, rgba(232, 77, 160, .18), transparent 28%),
+        radial-gradient(circle at 88% 12%, rgba(81, 106, 255, .22), transparent 30%),
+        linear-gradient(145deg, #07111f 0%, #101a32 54%, #171127 100%);
+      color: white;
+      padding: 46px 64px 56px;
+      position: relative;
+      overflow: hidden;
+    }
+    .cover:before, .cover:after {
+      content: ""; position: absolute; border-radius: 999px; filter: blur(2px); opacity: .35; pointer-events: none;
+    }
+    .cover:before { width: 360px; height: 360px; border: 1px solid rgba(255,255,255,.12); right: -110px; top: 140px; }
+    .cover:after { width: 520px; height: 520px; border: 1px solid rgba(255,255,255,.08); left: -250px; bottom: -250px; }
+    .cover-top { display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 1; }
+    .cover-brand { display: flex; gap: 14px; align-items: center; }
+    .cover-brand-title { font-weight: 780; font-size: 18px; letter-spacing: -.2px; }
+    .cover-brand-sub { color: #a9b5cc; font-size: 12px; margin-top: 3px; }
+    .cover-chip { padding: 8px 14px; border: 1px solid rgba(255,255,255,.15); background: rgba(255,255,255,.06); border-radius: 999px; color: #d9e1ef; font-size: 12px; }
+    .mi-mark { width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(145deg, #735bff, #8b59ff 44%, #ec4b9c); box-shadow: 0 8px 22px rgba(117, 84, 255, .36); position: relative; overflow: hidden; flex: 0 0 auto; }
+    .mi-mark:before, .mi-mark:after { content: ""; position: absolute; width: 8px; height: 32px; top: 5px; border-radius: 10px; transform: rotate(35deg); background: white; }
+    .mi-mark:before { left: 11px; opacity: .96; }
+    .mi-mark:after { left: 24px; opacity: .72; }
+    .cover-hero { max-width: 920px; margin: 88px auto 46px; text-align: center; position: relative; z-index: 1; }
+    .eyebrow { color: #ff86c4; font-size: 12px; text-transform: uppercase; letter-spacing: 2.2px; font-weight: 750; }
+    .cover h1 { font-size: 54px; line-height: 1.08; letter-spacing: -2.2px; margin: 18px 0 18px; }
+    .cover-hero p { max-width: 720px; margin: 0 auto; color: #b7c2d8; line-height: 1.75; font-size: 16px; }
+    .flow-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; max-width: 1320px; margin: 0 auto; position: relative; z-index: 1; }
+    .flow-card { min-height: 244px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.065); backdrop-filter: blur(16px); border-radius: 22px; padding: 24px; display: flex; flex-direction: column; transition: .22s ease; }
+    .flow-card:hover { transform: translateY(-5px); background: rgba(255,255,255,.095); border-color: rgba(255,255,255,.2); }
+    .flow-number { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; font-size: 12px; font-weight: 800; color: #fff; background: linear-gradient(145deg, #8f46ef, #e64f9e); }
+    .flow-card h3 { margin: 20px 0 9px; font-size: 19px; }
+    .flow-card p { color: #aeb9cf; font-size: 13px; line-height: 1.65; margin: 0 0 22px; flex: 1; }
+    .flow-action { border: 0; color: white; background: rgba(255,255,255,.11); border-radius: 11px; min-height: 42px; font-weight: 700; transition: .2s; }
+    .flow-action:hover { background: linear-gradient(90deg, #923be3, #e64998); }
+    .cover-walkthrough { max-width: 1320px; margin: 22px auto 0; display: flex; justify-content: space-between; gap: 18px; position: relative; z-index: 1; }
+    .walk-card { flex: 1; border: 1px solid rgba(255,255,255,.1); border-radius: 17px; background: rgba(6,12,25,.35); padding: 18px 20px; }
+    .walk-card b { display: block; font-size: 13px; margin-bottom: 8px; }
+    .walk-card span { color: #9facbf; font-size: 12px; line-height: 1.5; }
+
+    /* Shared product controls */
+    .btn { border: 0; min-height: 38px; padding: 0 18px; border-radius: 11px; font-weight: 700; transition: .18s ease; }
+    .btn:disabled { cursor: not-allowed; opacity: .5; }
+    .btn-creator { color: white; background: linear-gradient(90deg, var(--creator-pink), #d946ac 52%, var(--creator-purple)); box-shadow: 0 8px 22px rgba(221, 63, 161, .22); }
+    .btn-creator:hover { transform: translateY(-1px); box-shadow: 0 10px 26px rgba(221, 63, 161, .3); }
+    .btn-soft { color: #e43c8f; background: white; border: 1px solid #f5c6dc; }
+    .btn-soft:hover { background: #fff5fa; }
+    .btn-neutral { color: #344054; background: white; border: 1px solid #d8dee9; }
+    .btn-neutral:hover { background: #f8fafc; }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-blue { background: var(--ops-blue); color: white; border-radius: 4px; font-weight: 600; }
+    .text-btn { border: 0; padding: 4px 6px; background: transparent; color: #e94294; font-weight: 650; }
+    .text-btn.blue { color: #1685f8; }
+    .text-btn.green { color: #14a158; }
+    .text-btn.red { color: #ef4b5d; }
+    .pill { display: inline-flex; align-items: center; gap: 5px; padding: 5px 9px; border-radius: 999px; font-size: 11px; line-height: 1; white-space: nowrap; border: 1px solid transparent; }
+    .pill.verified, .pill.approved { color: #0a8b4c; background: var(--success-soft); border-color: #c9eed9; }
+    .pill.pending { color: #c67a08; background: var(--warning-soft); border-color: #f5ddb5; }
+    .pill.rejected, .pill.failed { color: #d93c4d; background: var(--danger-soft); border-color: #ffd1d6; }
+    .pill.unverified { color: #7b8495; background: #f6f7f9; border-color: #e4e7ec; }
+    .tag { display: inline-flex; padding: 4px 8px; border: 1px solid #ead5ff; background: #fbf5ff; color: #8b44dd; border-radius: 7px; font-size: 11px; }
+    .field { display: flex; flex-direction: column; gap: 7px; }
+    .field label { font-size: 12px; font-weight: 700; color: #344054; }
+    .field label .req { color: #ed3a82; margin-right: 3px; }
+    .input, .select, .textarea { width: 100%; border: 1px solid #dbe1ec; background: white; color: #344054; border-radius: 10px; outline: none; transition: .18s; }
+    .input, .select { height: 42px; padding: 0 13px; }
+    .textarea { min-height: 105px; padding: 12px 13px; resize: vertical; }
+    .input:focus, .select:focus, .textarea:focus { border-color: #e54c9c; box-shadow: 0 0 0 3px rgba(229,76,156,.08); }
+    .field-help { color: #8a94a6; font-size: 11px; line-height: 1.5; }
+    .field-error { color: var(--danger); font-size: 11px; }
+    .divider { height: 1px; background: var(--line); }
+
+    /* Creator shell */
+    .creator-shell { min-height: 100vh; background: radial-gradient(circle at 92% 5%, rgba(235, 100, 190, .08), transparent 26%), #f6f7fc; }
+    .creator-side { position: fixed; left: 0; top: 0; bottom: 0; width: 260px; padding: 22px 16px; border-right: 1px solid #e3e6ef; background: rgba(255,255,255,.86); z-index: 20; }
+    .creator-brand { display: flex; gap: 11px; align-items: center; padding: 0 4px 22px; }
+    .creator-brand .mi-mark { width: 38px; height: 38px; border-radius: 10px; }
+    .brand-title { font-size: 16px; font-weight: 800; }
+    .brand-sub { font-size: 12px; color: #8e99ad; margin-top: 3px; }
+    .creator-nav { display: flex; flex-direction: column; gap: 7px; }
+    .creator-nav-item { border: 0; display: flex; align-items: center; gap: 11px; height: 42px; padding: 0 13px; border-radius: 13px; background: transparent; color: #5b6475; font-weight: 500; text-align: left; }
+    .creator-nav-item:hover { background: #fff7fb; color: #da3f8c; }
+    .creator-nav-item.active { background: white; color: #293041; box-shadow: 0 9px 24px rgba(50,35,72,.09); }
+    .creator-nav-ico { width: 20px; height: 20px; border-radius: 7px; display: grid; place-items: center; color: #e94a9b; background: #fff0f7; font-size: 11px; font-weight: 800; }
+    .creator-top { position: fixed; left: 260px; right: 0; top: 0; height: 72px; border-bottom: 1px solid #e3e6ef; background: rgba(255,255,255,.82); backdrop-filter: blur(18px); z-index: 18; display: flex; align-items: center; justify-content: flex-end; padding: 0 28px; gap: 12px; }
+    .bell { width: 38px; height: 38px; border-radius: 12px; border: 1px solid #e4e7ee; background: white; display: grid; place-items: center; position: relative; color: #596274; }
+    .bell-badge { position: absolute; top: -8px; right: -6px; background: #ef4d59; color: white; min-width: 21px; height: 21px; border-radius: 11px; display: grid; place-items: center; font-size: 11px; font-weight: 800; border: 2px solid white; }
+    .bell svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .bell.has-unread { color: #db3f8b; border-color: #f2c5dc; background: #fff8fb; }
+    .notification-overlay { position: fixed; inset: 0; z-index: 140; background: rgba(22,28,40,.28); animation: notificationFadeIn .22s ease-out both; }
+    .notification-panel { position: absolute; top: 0; right: 0; bottom: 0; width: min(470px, calc(100vw - 30px)); background: white; box-shadow: -18px 0 54px rgba(27,34,48,.2); display: flex; flex-direction: column; will-change: transform,opacity; animation: notificationSlideIn .32s cubic-bezier(.22,1,.36,1) both; }
+    .notification-overlay.closing { animation: notificationFadeOut .2s ease-in forwards; pointer-events: none; }
+    .notification-overlay.closing .notification-panel { animation: notificationSlideOut .22s cubic-bezier(.4,0,1,1) forwards; }
+    @keyframes notificationFadeIn { from { background: rgba(22,28,40,0); } to { background: rgba(22,28,40,.28); } }
+    @keyframes notificationFadeOut { from { background: rgba(22,28,40,.28); } to { background: rgba(22,28,40,0); } }
+    @keyframes notificationSlideIn { from { transform: translateX(100%); opacity: .72; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes notificationSlideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: .72; } }
+    .notification-head { min-height: 66px; padding: 0 18px 0 20px; border-bottom: 1px solid #e5e8ef; display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+    .notification-head h2 { margin: 0; font-size: 21px; letter-spacing: -.35px; }
+    .notification-toolbar { padding: 15px 20px 7px; display: flex; align-items: center; justify-content: space-between; }
+    .mark-read-btn { min-height: 32px; padding: 0 11px; border: 1px solid #f1c8dc; border-radius: 9px; background: #fff7fb; color: #dd408d; font-size: 12px; font-weight: 720; }
+    .notification-count { color: #8993a5; font-size: 11px; }
+    .notification-list { padding: 0 20px 22px; overflow-y: auto; }
+    .notification-item { position: relative; padding: 15px 0 14px 23px; border-bottom: 1px solid #e5e8ef; }
+    .notification-item::before { content: ''; position: absolute; left: 0; top: 21px; width: 8px; height: 8px; border-radius: 999px; background: #c8ced8; box-shadow: 0 0 0 4px #f2f4f7; }
+    .notification-item.unread::before { background: #e24b98; box-shadow: 0 0 0 4px #fde8f3; }
+    .notification-item-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .notification-item-title { color: #202634; font-size: 13px; font-weight: 780; }
+    .notification-time { color: #7d8798; font-size: 11px; white-space: nowrap; }
+    .notification-body { margin: 6px 0 10px; color: #556176; font-size: 12px; line-height: 1.55; }
+    .notification-platform { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 10px; color: #6a7486; font-size: 10px; }
+    .notification-view { min-height: 30px; padding: 0 11px; border: 1px solid #f1c8dc; border-radius: 9px; background: #fff7fb; color: #dd408d; font-size: 11px; font-weight: 720; }
+    .notification-empty { min-height: 260px; display: grid; place-items: center; text-align: center; color: #8993a5; font-size: 12px; }
+    .creator-account { height: 38px; padding: 0 13px; border: 1px solid #f2d5e3; border-radius: 12px; background: white; color: #667085; display: flex; align-items: center; gap: 7px; font-weight: 650; }
+    .mini-avatar { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 999px; color: white; background: linear-gradient(145deg,#9148ec,#e64d9a); font-size: 10px; font-weight: 800; }
+    .creator-main { margin-left: 260px; padding: 98px 24px 58px; min-height: 100vh; }
+    .creator-wrap { width: min(1180px, calc(100vw - 318px)); margin: 0 auto; }
+    .page-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 22px; }
+    .page-head h1 { margin: 0; font-size: 28px; line-height: 1.2; letter-spacing: -.7px; }
+    .page-head p { margin: 8px 0 0; color: #7c8698; font-size: 13px; line-height: 1.6; }
+    .creator-panel { background: white; border: 1px solid #e2e6ef; border-radius: var(--radius); box-shadow: var(--creator-shadow); }
+
+    /* Social account cards */
+    .platform-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; align-items: start; }
+    .platform-card { border: 1px solid #e3e7ef; background: white; border-radius: 15px; overflow: hidden; transition: .2s; box-shadow: 0 8px 20px rgba(43,48,65,.04); }
+    .platform-card.verified { border-color: #9bdfb9; }
+    .platform-card.pending { border-color: #f3c975; }
+    .platform-card:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(43,48,65,.08); }
+    .platform-card-top { padding: 15px 16px 13px; }
+    .platform-title-row, .platform-bottom { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .platform-identity { display: flex; align-items: center; gap: 10px; }
+    .platform-name { font-size: 15px; font-weight: 760; }
+    .platform-bottom { box-sizing: border-box; height: 20px; margin-top: 12px; border-top: 1px solid #edf0f5; }
+    .expand-btn { display: inline-flex; align-items: center; justify-content: flex-end; gap: 5px; height: 18px; background: transparent; border: 0; color: #245a99; font-size: 12px; font-weight: 720; line-height: 18px; padding: 0; }
+    .expand-label { display: inline-flex; align-items: center; height: 18px; }
+    .chevron { position: relative; display: inline-grid; place-items: center; flex: 0 0 18px; width: 18px; height: 18px; border-radius: 999px; background: transparent; font-size: 0; }
+    .chevron::before { content: ''; width: 5px; height: 5px; border-right: 1.5px solid #245a99; border-bottom: 1.5px solid #245a99; transform: translateY(-1px) rotate(45deg); transition: transform .24s ease; }
+    .chevron.up::before { transform: translateY(2px) rotate(225deg); }
+    .account-reveal { display: grid; grid-template-rows: 0fr; opacity: 0; visibility: hidden; pointer-events: none; transition: grid-template-rows .32s cubic-bezier(.4,0,.2,1), opacity .2s ease, visibility 0s .32s; }
+    .account-reveal.open { grid-template-rows: 1fr; opacity: 1; visibility: visible; pointer-events: auto; transition: grid-template-rows .32s cubic-bezier(.4,0,.2,1), opacity .24s ease .05s, visibility 0s; }
+    .account-reveal-inner { min-height: 0; overflow: hidden; }
+    .platform-coming-soon { margin: 18px 0 0; text-align: center; color: #8a94a6; font-size: 12px; letter-spacing: .1px; }
+    .account-list { border-top: 1px solid #eef1f5; padding: 4px 14px 14px; background: #fcfcfe; }
+    .account-row { padding: 12px 2px; border-bottom: 1px solid #eef1f4; }
+    .account-row:last-of-type { border-bottom: 0; }
+    .account-main { display: grid; grid-template-columns: 34px minmax(0,1fr) auto; gap: 9px; align-items: center; }
+    .letter-avatar { width: 32px; height: 32px; border-radius: 999px; display: grid; place-items: center; color: #7544cb; background: linear-gradient(145deg,#eee6ff,#fbdff2); font-size: 11px; font-weight: 800; }
+    .account-name { font-size: 12px; font-weight: 740; color: #263143; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .account-link { color: #7b869a; font-size: 10px; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .account-method { color: #98a2b3; font-size: 10px; margin-top: 4px; }
+    .reject-box { margin: 9px 0 0 41px; padding: 9px 10px; background: #fff2f3; color: #b83c4a; font-size: 10.5px; line-height: 1.5; border-radius: 8px; border: 1px solid #ffd6da; }
+    .reject-actions { margin-top: 8px; }
+    .account-history { margin: 8px 0 0 41px; color: #657186; font-size: 10px; }
+    .account-history summary { cursor: pointer; color: #6552a4; font-weight: 700; }
+    .account-history-item { margin-top: 7px; padding: 7px 9px; border-left: 2px solid #d9c9f7; background: #f7f4fc; border-radius: 0 7px 7px 0; line-height: 1.55; }
+    .add-account { width: 100%; height: 34px; border-radius: 9px; border: 1px solid #e6bcd4; background: #fff4fa; color: #dc3e8c; font-size: 11px; font-weight: 720; margin-top: 10px; }
+    .no-account { text-align: center; color: #8a94a6; font-size: 11px; padding: 16px 0 7px; }
+
+    /* Social account platform-group list */
+    .social-page-wide { position: relative; left: 50%; width: min(1320px, calc(100vw - 308px)); transform: translateX(-50%); }
+    .platform-group-list { display: flex; flex-direction: column; gap: 12px; }
+    .platform-group { overflow: hidden; border: 1px solid #e1e6ef; border-radius: 15px; background: white; box-shadow: 0 8px 22px rgba(43,48,65,.045); transition: border-color .2s, box-shadow .2s; }
+    .platform-group.verified { border-color: #a8e0bf; }
+    .platform-group.pending { border-color: #f1ca7d; }
+    .platform-group:hover { box-shadow: 0 12px 29px rgba(43,48,65,.075); }
+    .platform-group.focused { animation: platformFocus 1.35s ease both; }
+    @keyframes platformFocus { 0%,100% { box-shadow: 0 8px 22px rgba(43,48,65,.045); } 35% { box-shadow: 0 0 0 4px rgba(226,75,152,.15), 0 14px 32px rgba(43,48,65,.1); } }
+    .platform-group-head { width: 100%; min-height: 76px; padding: 12px 18px; border: 0; background: white; display: grid; grid-template-columns: minmax(230px,1.6fr) minmax(105px,.7fr) minmax(105px,.7fr) minmax(140px,.85fr) 34px; align-items: center; gap: 16px; text-align: left; }
+    .platform-group-head:hover { background: #fffafd; }
+    .platform-summary { display: flex; align-items: center; gap: 12px; }
+    .platform-summary-name { color: #202838; font-size: 15px; font-weight: 780; }
+    .platform-summary-note { color: #8b95a6; font-size: 10px; margin-top: 4px; }
+    .platform-metric { display: flex; flex-direction: column; gap: 4px; }
+    .platform-metric span { color: #939cad; font-size: 10px; }
+    .platform-metric b { color: #394457; font-size: 12px; font-weight: 720; }
+    .group-chevron { position: relative; width: 28px; height: 28px; border-radius: 9px; background: #f3f7fc; justify-self: end; }
+    .group-chevron::before { content: ''; position: absolute; left: 10px; top: 8px; width: 6px; height: 6px; border-right: 1.6px solid #356ba6; border-bottom: 1.6px solid #356ba6; transform: rotate(45deg); transition: transform .25s ease, top .25s ease; }
+    .group-chevron.up::before { top: 12px; transform: rotate(225deg); }
+    .platform-group-body { border-top: 1px solid #edf0f5; background: #fcfcfe; padding: 0 18px 16px; }
+    .group-account-head, .group-account-row { display: grid; grid-template-columns: minmax(180px,1.25fr) minmax(245px,1.7fr) minmax(140px,.9fr) minmax(125px,.8fr) minmax(145px,.9fr); gap: 14px; align-items: center; }
+    .group-account-head { min-height: 39px; color: #929bab; font-size: 10px; font-weight: 700; border-bottom: 1px solid #e8ebf1; }
+    .group-account-row { min-height: 64px; color: #465165; font-size: 11px; border-bottom: 1px solid #e8ebf1; }
+    .group-account-identity { display: flex; align-items: center; gap: 9px; min-width: 0; }
+    .group-account-url { overflow: hidden; color: #3476c9; text-overflow: ellipsis; white-space: nowrap; }
+    .group-account-action { display: flex; justify-content: flex-end; gap: 8px; }
+    .group-reject { grid-column: 1/-1; margin: -2px 0 12px 42px; padding: 9px 10px; background: #fff2f3; color: #b83c4a; border: 1px solid #ffd6da; border-radius: 8px; font-size: 10.5px; line-height: 1.5; }
+    .group-history { grid-column: 1/-1; margin: -2px 0 12px 42px; color: #657186; font-size: 10px; }
+    .group-history summary { cursor: pointer; color: #6552a4; font-weight: 700; }
+    .group-history .account-history-item { margin-top: 7px; }
+    .group-empty { min-height: 92px; display: grid; place-items: center; text-align: center; color: #8a94a6; font-size: 11px; }
+    .group-add-row { padding-top: 13px; display: flex; justify-content: flex-end; }
+    .group-add { min-height: 34px; padding: 0 14px; border-radius: 9px; border: 1px solid #e6bcd4; background: #fff4fa; color: #dc3e8c; font-size: 11px; font-weight: 720; }
+
+    /* Provider icons */
+    .picon { width: 34px; height: 34px; border-radius: 9px; display: inline-grid; place-items: center; color: white; font-weight: 900; font-size: 15px; flex: 0 0 auto; position: relative; overflow: hidden; }
+    .picon.tiktok { background: #06080b; text-shadow: -2px 0 #20e3e8, 2px 0 #ff2b63; }
+    .picon.youtube { background: #ff0018; font-size: 13px; }
+    .picon.instagram { background: radial-gradient(circle at 30% 110%, #ffd600 0 20%, #ff7a00 36%, #ff0169 58%, #d300c5 78%, #7638fa 100%); }
+    .picon.twitch { background: #9146ff; }
+    .picon.x { background: #050505; }
+    .picon.facebook { background: #1877f2; font-family: Arial; font-size: 20px; }
+    .picon.sm { width: 24px; height: 24px; border-radius: 7px; font-size: 11px; }
+
+    /* Creator marketplace */
+    .market-filter { padding: 14px; display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 22px; }
+    .fake-select { height: 40px; min-width: 150px; border: 1px solid #d8deea; background: white; color: #7b8494; border-radius: 11px; padding: 0 12px; display: flex; align-items: center; justify-content: space-between; font-size: 12px; }
+    .campaign-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+    .campaign-card { background: white; border: 1px solid #e1e6ef; border-radius: 17px; overflow: hidden; box-shadow: 0 14px 34px rgba(55,44,80,.08); }
+    .campaign-art { height: 82px; padding: 13px; color: white; background: linear-gradient(135deg,#235fac,#4c67dc 55%,#d47e6f); position: relative; }
+    .campaign-art.alt { background: linear-gradient(135deg,#f2f8f6,#d8eef1 50%,#ffdfa9); color: #344054; }
+    .campaign-art.purple { background: linear-gradient(135deg,#e9effd,#faeefd); color: #344054; }
+    .campaign-lines { display: grid; gap: 6px; width: 70%; margin: 5px 0 0 34px; }
+    .campaign-lines i { display: block; height: 6px; border-radius: 4px; background: rgba(255,255,255,.35); }
+    .campaign-art.alt .campaign-lines i, .campaign-art.purple .campaign-lines i { background: rgba(255,255,255,.6); }
+    .campaign-body { padding: 13px; }
+    .campaign-title-row { display: flex; justify-content: space-between; gap: 8px; }
+    .campaign-title { font-weight: 720; font-size: 14px; }
+    .campaign-deadline { margin-top: 15px; font-size: 11px; color: #6f7889; }
+    .campaign-foot { display: grid; grid-template-columns: 1.2fr 1fr auto; align-items: end; gap: 8px; border-top: 1px solid #e9edf3; margin-top: 13px; padding-top: 11px; }
+    .metric-label { font-size: 9px; color: #7b8495; }
+    .metric-value { font-size: 12px; color: #263143; margin-top: 3px; }
+    .metric-value.price { color: #ec3e86; }
+    .apply-small { min-height: 36px; padding: 0 16px; }
+
+    /* Campaign detail */
+    .campaign-summary { padding: 18px 20px; }
+    .campaign-summary-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+    .campaign-title-wrap { display: flex; gap: 16px; align-items: center; }
+    .campaign-logo { width: 86px; height: 86px; border-radius: 12px; background: linear-gradient(145deg,#6c4df6,#e84e9d); color: white; display: grid; place-items: center; font-weight: 850; line-height: 1.1; text-align: center; }
+    .campaign-big { font-size: 27px; font-weight: 820; letter-spacing: -.5px; }
+    .summary-meta { display: flex; gap: 54px; margin-top: 17px; }
+    .summary-meta b { display: block; font-size: 13px; margin-top: 6px; }
+    .detail-block { padding: 20px; margin-top: 16px; }
+    .detail-block h3 { margin: 0 0 14px; font-size: 18px; }
+    .platform-tabs { display: flex; gap: 9px; margin-bottom: 15px; }
+    .platform-tab { height: 38px; padding: 0 14px; border-radius: 12px; border: 1px solid #dde2eb; background: white; color: #4c5668; font-weight: 700; display: flex; align-items: center; gap: 7px; }
+    .platform-tab.active { border-color: #f1a8cd; background: #fff3f9; color: #e64191; }
+    .requirements { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; border: 1px solid #e1e6ef; border-radius: 14px; padding: 18px; }
+    .req-item span { font-size: 11px; color: #7d8798; }
+    .req-item b { display: block; margin-top: 13px; font-size: 13px; }
+    .comp-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+    .comp-card { border: 1px solid #e0e5ee; border-radius: 13px; padding: 16px; min-height: 112px; }
+    .comp-card span { color: #7e8798; font-size: 11px; }
+    .comp-card b { display: block; margin-top: 9px; font-size: 19px; }
+
+    /* Profile */
+    .profile-layout { display: grid; grid-template-columns: minmax(0,1fr) 310px; gap: 16px; }
+    .profile-form { padding: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .profile-form .wide { grid-column: 1 / -1; }
+    .profile-aside { padding: 20px; }
+    .profile-aside h3 { margin: 0 0 15px; font-size: 19px; }
+    .overview-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #edf0f4; }
+    .overview-row:last-child { border-bottom: 0; }
+    .overview-platform { display: flex; align-items: center; gap: 9px; font-size: 12px; font-weight: 700; }
+
+    /* Modal / drawer / toast */
+    .overlay { position: fixed; inset: 0; background: rgba(18,25,39,.45); display: grid; place-items: center; z-index: 100; padding: 24px; backdrop-filter: blur(2px); }
+    .modal { width: 610px; max-height: calc(100vh - 50px); overflow: auto; background: white; border-radius: 17px; box-shadow: 0 30px 80px rgba(20,25,40,.28); }
+    .modal.sm { width: 470px; }
+    .modal.lg { width: 830px; }
+    .modal-head { padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e7ebf1; }
+    .modal-title { font-size: 18px; font-weight: 800; }
+    .modal-close { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; border: 1px solid #e2e7ef; background: white; color: #667085; }
+    .modal-body { padding: 20px; }
+    .modal-foot { display: flex; justify-content: flex-end; align-items: center; gap: 10px; padding: 15px 20px; border-top: 1px solid #e7ebf1; background: #fcfcfd; border-radius: 0 0 17px 17px; }
+    .modal-platform { display: flex; align-items: center; gap: 12px; padding: 13px; border: 1px solid #e1e6ef; border-radius: 12px; background: #fbfcfe; margin-bottom: 15px; }
+    .modal-platform span { color: #7d8797; font-size: 10px; display: block; margin-bottom: 3px; }
+    .method-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-bottom: 16px; }
+    .method-tab { min-height: 46px; border: 1px solid #dfe4ed; background: white; border-radius: 12px; color: #4d5668; font-weight: 700; position: relative; }
+    .method-tab.active { border-color: #ed9bc4; color: #e33d8d; background: #fff5fa; }
+    .recommended { position: absolute; right: 7px; top: -8px; font-size: 8px; background: #e94797; color: white; border-radius: 7px; padding: 3px 5px; }
+    .oauth-info { text-align: center; padding: 24px 18px 10px; }
+    .oauth-lock { width: 58px; height: 58px; margin: 0 auto 15px; display: grid; place-items: center; border-radius: 18px; background: linear-gradient(145deg,#f7e9ff,#ffe6f2); color: #9a44df; font-size: 24px; }
+    .oauth-info h4 { margin: 0 0 8px; font-size: 17px; }
+    .oauth-info p { margin: 0 auto; max-width: 410px; color: #737d8e; font-size: 12px; line-height: 1.65; }
+    .oauth-perms { margin: 18px 0 0; text-align: left; padding: 12px 14px; background: #f8f9fc; border-radius: 11px; }
+    .oauth-perms div { display: flex; gap: 8px; align-items: center; font-size: 11px; color: #5f6878; padding: 4px 0; }
+    .form-grid { display: grid; gap: 14px; }
+    .upload-box { border: 1px dashed #d5dce7; border-radius: 11px; padding: 17px; background: #fbfcfe; text-align: center; }
+    .upload-box.done { border-style: solid; border-color: #a9e0c2; background: #f2fbf6; }
+    .upload-thumb { width: 72px; height: 54px; border-radius: 7px; margin: 0 auto 8px; background: linear-gradient(145deg,#e8ecf8,#f9ddeb); border: 1px solid #dfe4ed; display: grid; place-items: center; color: #8f5acb; font-weight: 800; font-size: 10px; }
+    .guard-icon { width: 64px; height: 64px; display: grid; place-items: center; border-radius: 20px; margin: 4px auto 15px; font-size: 27px; background: #fff0f7; color: #e74392; }
+    .guard-body { text-align: center; }
+    .guard-body h3 { margin: 0 0 9px; font-size: 20px; }
+    .guard-body p { color: #707a8c; font-size: 13px; line-height: 1.65; margin: 0 auto; max-width: 370px; }
+    .guard-reason { text-align: left; background: #fff2f3; color: #b23e4b; padding: 11px 12px; border-radius: 10px; font-size: 11px; margin-top: 15px; }
+    .toast-stack { position: fixed; top: 18px; left: 50%; transform: translateX(-50%); z-index: 500; display: flex; flex-direction: column; gap: 9px; align-items: center; pointer-events: none; }
+    .toast { min-width: 320px; max-width: 540px; background: white; border: 1px solid #e0e5ee; box-shadow: 0 14px 35px rgba(34,42,58,.18); border-radius: 12px; padding: 12px 15px; display: flex; align-items: center; gap: 10px; font-size: 12px; color: #344054; animation: toastIn .25s ease; }
+    .toast.success { border-color: #bfe7d1; }
+    .toast.error { border-color: #f6c3c9; }
+    .toast.warning { border-color: #f1d49f; }
+    .toast-dot { width: 20px; height: 20px; border-radius: 999px; display: grid; place-items: center; color: white; font-size: 10px; background: var(--success); }
+    .toast.error .toast-dot { background: var(--danger); }
+    .toast.warning .toast-dot { background: var(--warning); }
+    @keyframes toastIn { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .drawer-overlay { position: fixed; inset: 0; background: rgba(17,24,39,.35); z-index: 100; animation: drawerFadeIn .24s ease-out both; }
+    .drawer { position: absolute; right: 0; top: 0; bottom: 0; width: 590px; background: white; box-shadow: -15px 0 50px rgba(21,30,45,.2); display: flex; flex-direction: column; will-change: transform, opacity; animation: drawerSlideIn .34s cubic-bezier(.22,1,.36,1) both; }
+    .drawer-overlay.closing { animation: drawerFadeOut .22s ease-in forwards; pointer-events: none; }
+    .drawer-overlay.closing .drawer { animation: drawerSlideOut .24s cubic-bezier(.4,0,1,1) forwards; }
+    @keyframes drawerFadeIn { from { background: rgba(17,24,39,0); } to { background: rgba(17,24,39,.35); } }
+    @keyframes drawerFadeOut { from { background: rgba(17,24,39,.35); } to { background: rgba(17,24,39,0); } }
+    @keyframes drawerSlideIn { from { transform: translateX(100%); opacity: .72; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes drawerSlideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: .72; } }
+    .drawer-head { padding: 17px 20px; border-bottom: 1px solid #e7ebf1; display: flex; align-items: center; justify-content: space-between; }
+    .drawer-body { padding: 19px 20px 90px; overflow: auto; }
+    .drawer-foot { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: flex-end; gap: 9px; padding: 14px 20px; background: white; border-top: 1px solid #e7ebf1; }
+    .proto-home { position: fixed; right: 18px; bottom: 18px; z-index: 450; height: 38px; padding: 0 14px; border: 1px solid rgba(255,255,255,.7); background: rgba(16,24,40,.84); color: white; border-radius: 999px; box-shadow: 0 8px 24px rgba(16,24,40,.24); backdrop-filter: blur(12px); font-size: 11px; font-weight: 750; }
+
+    /* Third-party OAuth pages */
+    .provider-page { min-height: 100vh; background: #f4f5f7; display: grid; place-items: center; padding: 42px; position: relative; }
+    .provider-browser { width: 900px; background: white; border-radius: 18px; overflow: hidden; box-shadow: 0 24px 75px rgba(25,32,47,.18); border: 1px solid #e2e5ea; }
+    .browser-bar { height: 48px; display: flex; align-items: center; gap: 13px; padding: 0 15px; background: #f7f8fa; border-bottom: 1px solid #e5e8ed; }
+    .browser-dots { display: flex; gap: 6px; }
+    .browser-dots i { width: 9px; height: 9px; border-radius: 999px; background: #d0d5dd; }
+    .address { flex: 1; height: 29px; border-radius: 7px; border: 1px solid #e1e5eb; background: white; color: #768093; font-size: 10px; display: flex; align-items: center; padding: 0 12px; }
+    .provider-content { min-height: 590px; display: grid; place-items: center; padding: 36px; }
+    .provider-consent { width: 470px; text-align: center; }
+    .provider-logo { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 22px; font-weight: 850; margin-bottom: 27px; }
+    .provider-consent h1 { font-size: 26px; margin: 0 0 10px; letter-spacing: -.5px; }
+    .provider-consent > p { color: #667085; font-size: 13px; line-height: 1.65; margin: 0 auto; max-width: 420px; }
+    .provider-app { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 22px 0; }
+    .provider-app .mi-mark { width: 32px; height: 32px; border-radius: 9px; }
+    .provider-account { display: flex; align-items: center; gap: 10px; text-align: left; border: 1px solid #e0e4ea; border-radius: 12px; padding: 11px 12px; margin: 19px 0; }
+    .provider-avatar { width: 36px; height: 36px; border-radius: 999px; display: grid; place-items: center; background: #e9ebef; color: #344054; font-size: 12px; font-weight: 800; }
+    .provider-account b { display: block; font-size: 12px; }
+    .provider-account span { display: block; font-size: 10px; color: #7c8594; margin-top: 3px; }
+    .permission-list { text-align: left; border: 1px solid #e3e6eb; border-radius: 12px; overflow: hidden; margin: 0 0 20px; }
+    .permission-list div { padding: 11px 13px; display: flex; align-items: center; gap: 10px; font-size: 11px; color: #485163; border-bottom: 1px solid #eceef2; }
+    .permission-list div:last-child { border-bottom: 0; }
+    .perm-check { width: 20px; height: 20px; display: grid; place-items: center; border-radius: 999px; background: #eaf8f0; color: #0b9a51; }
+    .provider-actions { display: flex; gap: 10px; }
+    .provider-actions button { flex: 1; height: 44px; border-radius: 9px; font-weight: 750; }
+    .provider-allow { border: 0; color: white; }
+    .provider-deny { background: white; border: 1px solid #d6dbe3; color: #344054; }
+    .provider-error-link { border: 0; background: transparent; color: #778092; margin-top: 13px; font-size: 10px; text-decoration: underline; }
+    .provider-page.tiktok .provider-allow { background: #fe2c55; }
+    .provider-page.youtube .provider-allow { background: #1a73e8; }
+    .provider-page.twitch .provider-allow { background: #9146ff; }
+    .provider-page.x .provider-allow { background: #111; }
+    .provider-page.twitch .provider-content { background: #f7f5ff; }
+    .provider-page.x .provider-content { background: #fff; }
+    .processing { text-align: center; }
+    .spinner { width: 46px; height: 46px; border: 4px solid #e7e9ee; border-top-color: #8f3be5; border-radius: 999px; margin: 0 auto 16px; animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Operations shell */
+    .ops-shell { min-height: 100vh; background: #f3f6f9; color: #2c3e50; }
+    .ops-side { position: fixed; left: 0; top: 0; bottom: 0; width: 200px; background: var(--ops-dark); color: #d8e2ed; z-index: 20; }
+    .ops-brand { height: 55px; display: flex; align-items: center; gap: 10px; padding: 0 15px; background: #051725; color: white; font-size: 15px; font-weight: 760; }
+    .ops-vmark { width: 28px; height: 31px; position: relative; }
+    .ops-vmark:before, .ops-vmark:after { content: ""; position: absolute; top: 0; width: 14px; height: 31px; clip-path: polygon(0 0,100% 0,50% 100%); }
+    .ops-vmark:before { left: 0; background: #db3eb2; }
+    .ops-vmark:after { right: 0; background: #31c1f0; }
+    .ops-menu { padding: 8px 0 20px; }
+    .ops-menu-item, .ops-subtitle { height: 53px; padding: 0 24px; display: flex; align-items: center; gap: 11px; color: #d6e0ea; font-size: 13px; border: 0; width: 100%; background: transparent; text-align: left; }
+    .ops-menu-item:hover, .ops-subtitle:hover { background: #0f2e47; }
+    .ops-menu-item.active { background: #409eff; color: white; }
+    .ops-menu-ico { width: 15px; text-align: center; color: #b9d2e7; }
+    .ops-submenu { background: #0a243a; padding: 2px 0; }
+    .ops-submenu .ops-menu-item { height: 49px; padding-left: 40px; }
+    .ops-top { position: fixed; left: 200px; right: 0; top: 0; height: 51px; background: white; border-bottom: 1px solid #dfe4ea; z-index: 18; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; }
+    .ops-top-left, .ops-top-right { display: flex; align-items: center; gap: 14px; font-size: 12px; }
+    .ops-email { color: #3b4d61; }
+    .ops-tabs { position: fixed; left: 200px; right: 0; top: 51px; height: 34px; background: white; border-bottom: 1px solid #dfe4ea; z-index: 17; display: flex; align-items: center; padding: 0 38px; gap: 4px; }
+    .ops-tab { height: 30px; min-width: 90px; display: grid; place-items: center; border: 1px solid #d5dce5; background: white; font-size: 11px; color: #536273; }
+    .ops-tab.active { color: white; border-color: var(--ops-blue); background: var(--ops-blue); }
+    .ops-main { margin-left: 200px; padding: 105px 20px 55px; min-height: 100vh; }
+    .ops-card { background: white; border: 1px solid #dfe4ea; border-radius: 4px; }
+    .ops-card-head { min-height: 58px; border-bottom: 1px solid #e4e8ed; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; }
+    .ops-card-title { font-weight: 760; font-size: 16px; color: #1f2d3d; }
+    .ops-count { color: #8391a3; font-size: 12px; }
+    .ops-filter { padding: 18px 20px 12px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    .ops-input, .ops-select { height: 34px; border: 1px solid #dcdfe6; border-radius: 4px; padding: 0 11px; background: white; color: #606266; font-size: 12px; outline: none; }
+    .ops-input:focus, .ops-select:focus { border-color: #409eff; }
+    .ops-input.search { width: 245px; }
+    .ops-select { width: 150px; }
+    .ops-date { width: 130px; }
+    .ops-filter-spacer { flex: 1; }
+    .ops-filter .btn { min-height: 34px; height: 34px; border-radius: 4px; font-size: 12px; padding: 0 15px; }
+    .ops-table-wrap { padding: 0 20px 18px; overflow-x: auto; }
+    .ops-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .ops-table th { height: 44px; text-align: left; padding: 0 12px; color: #66788a; background: #fafafa; border-bottom: 1px solid #dfe6ec; font-size: 12px; font-weight: 650; }
+    .ops-table td { min-height: 56px; padding: 12px; color: #405266; border-bottom: 1px solid #ebeef2; font-size: 12px; vertical-align: middle; }
+    .ops-table tr:hover td { background: #f8fbff; }
+    .ops-person { display: flex; align-items: center; gap: 9px; }
+    .ops-avatar { width: 30px; height: 30px; border-radius: 999px; display: grid; place-items: center; background: #d8dee8; color: #5d6c7f; font-weight: 750; }
+    .ops-person b { display: block; color: #2c3e50; font-size: 12px; }
+    .ops-person span { display: block; color: #9aa5b1; font-size: 10px; margin-top: 2px; }
+    .profile-url { color: #409eff; text-decoration: none; max-width: 100%; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .shot-thumb { width: 54px; height: 39px; border: 1px solid #d6dde7; border-radius: 5px; background: linear-gradient(145deg,#eef3fa,#f8eafa); position: relative; overflow: hidden; }
+    .shot-thumb:before { content: ""; position: absolute; left: 7px; top: 9px; width: 10px; height: 10px; border-radius: 999px; background: #d7b9ef; }
+    .shot-thumb:after { content: ""; position: absolute; left: 21px; top: 9px; width: 25px; height: 4px; border-radius: 3px; background: #bdc9d9; box-shadow: 0 8px 0 #d3dbe6, 0 16px 0 #e0e5ec; }
+    .ops-actions { display: flex; gap: 4px; align-items: center; white-space: nowrap; }
+    .pagination { height: 50px; display: flex; align-items: center; justify-content: flex-end; gap: 8px; color: #718096; font-size: 11px; }
+    .page-box { min-width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid #d9dfe7; border-radius: 4px; background: white; }
+    .page-box.active { color: white; background: #409eff; border-color: #409eff; }
+
+    /* Ops dashboard */
+    .ops-hero { border-radius: 4px; min-height: 150px; color: white; padding: 24px; background: linear-gradient(120deg,#142138,#223d5e); display: flex; justify-content: space-between; align-items: flex-start; }
+    .ops-hero h1 { font-size: 34px; margin: 10px 0 10px; }
+    .ops-hero p { color: #d4ddec; font-size: 13px; }
+    .ops-kpis { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-top: 15px; }
+    .ops-kpi { min-height: 135px; background: white; border-radius: 4px; border-top: 3px solid #3f9eff; padding: 18px; }
+    .ops-kpi.green { border-color: #28c98a; }
+    .ops-kpi.orange { border-color: #f2a220; }
+    .ops-kpi.red { border-color: #f25265; }
+    .ops-kpi.purple { border-color: #8b5cf6; }
+    .ops-kpi.gray { border-color: #64748b; }
+    .ops-kpi span { color: #65748a; font-size: 12px; }
+    .ops-kpi b { display: block; color: #142033; font-size: 31px; margin: 12px 0 8px; }
+    .ops-kpi small { color: #7b8798; }
+
+    /* Ops drawer details */
+    .audit-person-card { display: flex; align-items: center; gap: 13px; padding: 14px; border: 1px solid #e0e5eb; border-radius: 8px; background: #fafbfc; }
+    .audit-person-card .ops-avatar { width: 42px; height: 42px; }
+    .audit-person-card b { font-size: 14px; display: block; }
+    .audit-person-card span { color: #7d8795; font-size: 11px; display: block; margin-top: 4px; }
+    .detail-section { margin-top: 20px; }
+    .detail-section h4 { margin: 0 0 11px; font-size: 13px; color: #26384a; }
+    .kv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #e3e7ec; border: 1px solid #e3e7ec; border-radius: 6px; overflow: hidden; }
+    .kv { background: white; padding: 11px 12px; min-height: 63px; }
+    .kv span { display: block; color: #8a95a4; font-size: 10px; margin-bottom: 6px; }
+    .kv b, .kv a { color: #34495e; font-size: 11px; word-break: break-all; }
+    .timeline { border-left: 2px solid #e2e7ed; margin-left: 8px; padding-left: 17px; }
+    .timeline-item { position: relative; padding: 0 0 17px; }
+    .timeline-item:before { content: ""; position: absolute; left: -23px; top: 3px; width: 10px; height: 10px; border-radius: 999px; background: #409eff; border: 2px solid white; box-shadow: 0 0 0 1px #9acbff; }
+    .timeline-item b { font-size: 11px; }
+    .timeline-item div { color: #8591a0; font-size: 10px; margin-top: 4px; }
+    .reason-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; }
+    .reason-chip { border: 1px solid #d7dde5; background: white; border-radius: 999px; padding: 6px 9px; color: #526174; font-size: 10px; }
+    .reason-chip:hover { border-color: #409eff; color: #409eff; }
+    .preview-stage { height: 490px; display: grid; place-items: center; background: #1f2937; overflow: hidden; position: relative; }
+    .mock-shot { width: 430px; height: 320px; background: white; border-radius: 9px; padding: 16px; transform-origin: center; transition: .18s; box-shadow: 0 20px 50px rgba(0,0,0,.32); }
+    .mock-shot-bar { height: 30px; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; gap: 5px; }
+    .mock-shot-bar i { width: 7px; height: 7px; border-radius: 999px; background: #cfd5dd; }
+    .mock-profile { display: flex; gap: 16px; margin-top: 20px; align-items: center; }
+    .mock-profile-photo { width: 74px; height: 74px; border-radius: 999px; background: linear-gradient(145deg,#8151e8,#ee70a4); display: grid; place-items: center; color: white; font-size: 21px; font-weight: 800; }
+    .mock-profile-lines { flex: 1; display: grid; gap: 9px; }
+    .mock-profile-lines i { height: 9px; background: #dbe1e9; border-radius: 5px; }
+    .mock-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 9px; margin-top: 22px; }
+    .mock-stat { background: #f2f4f7; border-radius: 8px; padding: 12px; text-align: center; color: #344054; font-size: 12px; }
+    .mock-gallery { display: grid; grid-template-columns: repeat(3,1fr); gap: 7px; margin-top: 16px; }
+    .mock-gallery div { height: 68px; border-radius: 6px; background: linear-gradient(145deg,#e8ebf5,#f5dce9); }
+    .preview-controls { display: flex; gap: 8px; justify-content: center; padding: 12px; background: #111827; }
+    .preview-controls button { width: 38px; height: 34px; border-radius: 6px; border: 1px solid #4b5563; background: #263244; color: white; }
+
+    /* Influencer detail */
+    .influencer-head { display: flex; align-items: center; gap: 15px; padding: 22px; }
+    .big-avatar { width: 64px; height: 64px; display: grid; place-items: center; border-radius: 999px; background: linear-gradient(145deg,#f3cbb8,#dd87aa); color: white; font-weight: 850; font-size: 18px; }
+    .influencer-head h2 { margin: 0 0 5px; font-size: 21px; }
+    .influencer-head p { margin: 0; color: #8a96a5; font-size: 11px; }
+    .detail-kpis { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; padding: 0 22px 22px; }
+    .detail-kpi { border: 1px solid #e1e6ec; border-radius: 7px; padding: 14px; }
+    .detail-kpi span { font-size: 10px; color: #8b96a5; }
+    .detail-kpi b { display: block; margin-top: 8px; color: #26384b; }
+    .detail-tabs { display: flex; gap: 20px; padding: 0 22px; border-bottom: 1px solid #e4e8ed; }
+    .detail-tab { height: 44px; border: 0; background: transparent; color: #66788a; }
+    .detail-tab.active { color: #409eff; border-bottom: 2px solid #409eff; }
+
+    /* State gallery */
+    .state-page { min-height: 100vh; background: #f4f6fb; padding: 42px 54px 70px; }
+    .state-head { max-width: 1240px; margin: 0 auto 25px; }
+    .state-head h1 { margin: 0 0 8px; font-size: 32px; }
+    .state-head p { color: #738095; margin: 0; }
+    .state-grid { max-width: 1240px; margin: 0 auto; display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; }
+    .state-card { background: white; border: 1px solid #e1e6ef; border-radius: 15px; padding: 20px; min-height: 220px; }
+    .state-card h3 { margin: 0 0 18px; font-size: 16px; }
+    .skeleton { display: grid; gap: 12px; }
+    .sk-line { height: 13px; border-radius: 7px; background: linear-gradient(90deg,#eef1f5 25%,#f8f9fb 37%,#eef1f5 63%); background-size: 400% 100%; animation: shimmer 1.3s infinite; }
+    @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+    .empty-state { display: grid; place-items: center; text-align: center; color: #7d8797; min-height: 150px; }
+    .empty-icon { width: 58px; height: 58px; display: grid; place-items: center; border-radius: 18px; background: #f1f3f7; font-size: 24px; margin: 0 auto 10px; }
+    .error-banner { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 13px; border-radius: 10px; background: #fff1f2; border: 1px solid #ffcfd5; color: #b53c49; font-size: 12px; }
+    .conflict-card { border: 1px solid #f2d49e; background: #fffaf0; border-radius: 11px; padding: 14px; color: #9a660a; font-size: 12px; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <div id="toast-root" class="toast-stack"></div>
+
+  <script>
+    const platforms = [
+      { key: 'tiktok', name: 'TikTok', oauth: true },
+      { key: 'youtube', name: 'YouTube', oauth: true },
+      { key: 'instagram', name: 'Instagram', oauth: false },
+      { key: 'twitch', name: 'Twitch', oauth: true },
+      { key: 'x', name: 'X', oauth: true },
+      { key: 'facebook', name: 'Facebook', oauth: false }
+    ];
+
+    const state = {
+      view: 'cover',
+      creatorView: 'social',
+      opsView: 'dashboard',
+      selectedCampaignPlatform: 'instagram',
+      expanded: new Set(['tiktok']),
+      modal: null,
+      drawer: null,
+      notificationOpen: false,
+      manualUploaded: false,
+      manualError: '',
+      manualDraft: null,
+      oauthProvider: 'tiktok',
+      oauthProcessing: false,
+      appliedPlatforms: new Set(),
+      previewZoom: 1,
+      previewRotate: 0,
+      auditFilters: { q: '', platform: 'all', status: 'all', from: '', to: '' },
+      auditFiltered: null,
+      notifications: [
+        { id:'notice-rejected-twitch', type:'rejected', title:'Social account verification rejected', body:'Your Twitch account "indie_dev_live" was not approved. Reason: The screenshot does not match the submitted profile. Please upload a complete profile screenshot.', platform:'twitch', accountId:'tw-1', time:'Jul 14, 2026, 04:42 PM', unread:true },
+        { id:'notice-verified-youtube', type:'verified', title:'Social account verified', body:'Your YouTube account "Indie Game Explorer" has been verified. You can now use it to apply for advertiser campaigns.', platform:'youtube', accountId:'yt-1', time:'Jul 14, 2026, 03:18 PM', unread:true }
+      ],
+      accounts: {
+        tiktok: [
+          { id: 'tt-1', name: 'IndieDevLab', url: 'https://www.tiktok.com/@indiedevlab', status: 'verified', method: 'OAuth' },
+          { id: 'tt-2', name: 'StudioBuilds', url: 'https://www.tiktok.com/@studiobuilds', status: 'verified', method: 'OAuth' }
+        ],
+        youtube: [
+          { id: 'yt-1', name: 'Indie Game Explorer', url: 'https://www.youtube.com/@indiegameexplorer', status: 'verified', method: 'OAuth' }
+        ],
+        instagram: [
+          { id: 'ig-1', name: 'indie.game.lab', url: 'https://www.instagram.com/indie.game.lab', status: 'pending', method: 'Manual Submission' }
+        ],
+        twitch: [
+          { id: 'tw-1', name: 'indie_dev_live', url: 'https://www.twitch.tv/indie_dev_live', status: 'rejected', method: 'Manual Submission', reason: 'The screenshot does not match the submitted profile. Please upload a complete profile screenshot.', history:[{status:'rejected',at:'2026-07-14 16:42:15',by:'ops@example.com',reason:'The screenshot does not match the submitted profile. Please upload a complete profile screenshot.'}] }
+        ],
+        x: [],
+        facebook: []
+      },
+      auditRows: [
+        { id: 'a1', creator: '独立游戏开发者', email: 'creator.one@example.com', platform: 'instagram', account: 'indie.game.lab', url: 'https://www.instagram.com/indie.game.lab', submitted: '2026-07-15 09:36:12', status: 'pending', accountId: 'ig-1', mainCreator: true },
+        { id: 'a2', creator: 'Mika Studio', email: 'mika.studio@example.com', platform: 'tiktok', account: 'mika_studio', url: 'https://www.tiktok.com/@mika_studio', submitted: '2026-07-15 08:42:03', status: 'pending' },
+        { id: 'a3', creator: 'Nova Plays', email: 'nova.plays@example.com', platform: 'youtube', account: 'NovaPlays', url: 'https://www.youtube.com/@novaplays', submitted: '2026-07-14 18:20:46', status: 'approved', reviewer: 'ops@example.com', reviewedAt: '2026-07-14 18:38:20' },
+        { id: 'a4', creator: 'Daily Miki', email: 'daily.miki@example.com', platform: 'twitch', account: 'daily_miki_live', url: 'https://www.twitch.tv/daily_miki_live', submitted: '2026-07-14 16:14:09', status: 'rejected', reviewer: 'ops@example.com', reviewedAt: '2026-07-14 16:42:15', reason: '主页链接无法访问，请检查链接有效性后重新提交。' },
+        { id: 'a5', creator: 'Tech Otto', email: 'tech.otto@example.com', platform: 'x', account: 'techotto', url: 'https://x.com/techotto', submitted: '2026-07-15 10:02:31', status: 'pending', conflict: true },
+        { id: 'a6', creator: 'Lyn Vlog', email: 'lyn.vlog@example.com', platform: 'facebook', account: 'LynVlogOfficial', url: 'https://www.facebook.com/lynvlogofficial', submitted: '2026-07-13 13:50:22', status: 'approved', reviewer: 'reviewer@example.com', reviewedAt: '2026-07-13 14:11:04' }
+      ]
+    };
+
+    const app = document.getElementById('app');
+
+    function platformInfo(key) { return platforms.find(p => p.key === key); }
+    function platformIcon(key, small = false) {
+      const symbols = { tiktok: '♪', youtube: '▶', instagram: '◎', twitch: '▣', x: 'X', facebook: 'f' };
+      return `<span class="picon ${key} ${small ? 'sm' : ''}">${symbols[key]}</span>`;
+    }
+    function statusLabel(s) {
+      return ({ verified:'Verified', pending:'Under Review', rejected:'Verification Failed', unverified:'Not Verified', approved:'已通过', failed:'失败' })[s] || s;
+    }
+    function platformStatus(key) {
+      const list = state.accounts[key] || [];
+      if (list.some(a => a.status === 'verified')) return 'verified';
+      if (list.some(a => a.status === 'pending')) return 'pending';
+      return 'unverified';
+    }
+    function initials(name) {
+      const parts = name.trim().split(/[\s._-]+/).filter(Boolean);
+      return (parts.length > 1 ? parts[0][0] + parts[1][0] : name.slice(0,2)).toUpperCase();
+    }
+    function escapeHtml(value) {
+      return String(value || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    }
+    function miLogo() {
+      return `<div class="mi-mark"></div>`;
+    }
+
+    function render() {
+      let html = '';
+      if (state.view === 'cover') html = renderCover();
+      else if (state.view === 'creator') html = renderCreator();
+      else if (state.view === 'ops') html = renderOps();
+      else if (state.view === 'oauth') html = renderOAuth();
+      else if (state.view === 'states') html = renderStateGallery();
+      app.innerHTML = html;
+      renderOverlay();
+    }
+
+    function renderCover() {
+      return `
+        <main class="cover">
+          <div class="cover-top">
+            <div class="cover-brand">${miLogo()}<div><div class="cover-brand-title">MeetInfluencer</div><div class="cover-brand-sub">Interactive product prototype</div></div></div>
+            <div class="cover-chip">Social Account Verification · 2026.07.14</div>
+          </div>
+          <section class="cover-hero">
+            <div class="eyebrow">原型封面（封面不做入真实系统）</div>
+            <h1>Trusted social accounts.<br/>A clearer path to collaboration.</h1>
+            <p>从达人认证、第三方授权到运营审核与商单报名，完整演示社媒账号认证如何嵌入 MeetInfluencer 现有业务闭环。</p>
+          </section>
+          <section class="flow-grid">
+            <article class="flow-card"><div class="flow-number">01</div><h3>达人端</h3><p>查看六个平台、展开多账号、OAuth 授权、手工提交及失败重提。</p><button class="flow-action" onclick="openCreator('social')">进入 Social Accounts</button></article>
+            <article class="flow-card"><div class="flow-number">02</div><h3>商单报名联动</h3><p>从任务详情进入报名，体验平台账号前置校验和认证状态分支。</p><button class="flow-action" onclick="openCreator('market')">进入报名流程</button></article>
+            <article class="flow-card"><div class="flow-number">03</div><h3>运营端</h3><p>在现有运营后台中查看队列、核验截图并完成通过或驳回。</p><button class="flow-action" onclick="openOps('dashboard')">进入运营端</button></article>
+            <article class="flow-card"><div class="flow-number">04</div><h3>OAuth 平台预览</h3><p>TikTok、YouTube、Twitch、X 四种第三方授权视觉与结果分支。</p><button class="flow-action" onclick="openOAuthPicker()">查看授权页面</button></article>
+          </section>
+          <section class="cover-walkthrough">
+            <div class="walk-card"><b>推荐演示 1 · 手工认证闭环</b><span>达人端 Instagram 审核中 → 运营端通过 → 返回达人端报名</span></div>
+            <div class="walk-card"><b>推荐演示 2 · OAuth 即时认证</b><span>X 添加账号 → 第三方授权 → 账号立即变为 Verified</span></div>
+            <div class="walk-card"><b>组件状态</b><span>Loading、Empty、接口失败、重复提交与并发审核冲突</span></div>
+            <button class="flow-action" style="padding:0 22px; min-width:150px" onclick="openStates()">异常状态原型展示</button>
+          </section>
+        </main>`;
+    }
+
+    function openCreator(view = 'social') { state.view = 'creator'; state.creatorView = view; state.modal = null; state.drawer = null; render(); }
+    function openOps(view = 'dashboard') { state.view = 'ops'; state.opsView = view; state.modal = null; state.drawer = null; state.notificationOpen = false; render(); }
+    function goCover() { state.view = 'cover'; state.modal = null; state.drawer = null; state.notificationOpen = false; render(); }
+    function openStates() { state.view = 'states'; state.modal = null; render(); }
+
+    function unreadNotificationCount(){ return state.notifications.filter(n=>n.unread).length; }
+    function notificationBellIcon(){ return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg>`; }
+    function openNotificationCenter(){ state.notificationOpen=true; render(); }
+    function closeNotificationCenter(){ const overlay=document.querySelector('.notification-overlay'); if(!overlay){state.notificationOpen=false;render();return;} overlay.classList.add('closing'); setTimeout(()=>{state.notificationOpen=false;render();},220); }
+    function markAllNotificationsRead(){
+      state.notifications.forEach(n=>n.unread=false);
+      document.querySelectorAll('.notification-item.unread').forEach(el=>el.classList.remove('unread'));
+      document.querySelectorAll('.bell-badge').forEach(el=>el.remove());
+      document.querySelector('.bell')?.classList.remove('has-unread');
+      const count=document.querySelector('.notification-count'); if(count)count.textContent='All notifications are read';
+      const button=document.querySelector('.mark-read-btn'); if(button){button.textContent='All Read';button.disabled=true;}
+    }
+    function viewNotification(id){
+      const notice=state.notifications.find(n=>n.id===id); if(!notice)return;
+      notice.unread=false; state.notificationOpen=false; state.view='creator'; state.creatorView='social'; state.modal=null; state.drawer=null; state.expanded.add(notice.platform); render();
+      setTimeout(()=>{const group=document.querySelector(`.platform-group[data-platform="${notice.platform}"]`); if(group){group.scrollIntoView({behavior:'smooth',block:'center'});group.classList.add('focused');}},80);
+    }
+    function englishRejectReason(reason){
+      const mappings=[['主页链接无法访问','The profile URL could not be accessed. Please verify the link and resubmit.'],['主页截图与提交账号不匹配','The profile screenshot does not match the submitted account. Please upload a complete screenshot and resubmit.'],['认证信息不完整','The verification information is incomplete. Please update it and resubmit.']];
+      const matched=mappings.find(([key])=>String(reason||'').includes(key));
+      if(matched)return matched[1];
+      if(/[\u3400-\u9fff]/.test(String(reason||'')))return 'The submitted verification information did not pass review. Please view the account details and resubmit after making updates.';
+      return reason||'The submitted verification information did not pass review. Please view the account details for more information.';
+    }
+    function addVerificationNotification(type,r){
+      if(!r.mainCreator)return;
+      const platform=platformInfo(r.platform); const approved=type==='verified';
+      state.notifications.unshift({id:`notice-${type}-${Date.now()}`,type,title:approved?'Social account verified':'Social account verification rejected',body:approved?`Your ${platform.name} account "${r.account}" has been verified. You can now use it to apply for advertiser campaigns.`:`Your ${platform.name} account "${r.account}" was not approved. Reason: ${englishRejectReason(r.reason)}`,platform:r.platform,accountId:r.accountId,time:approved?'Jul 15, 2026, 10:30 AM':'Jul 15, 2026, 10:32 AM',unread:true});
+    }
+    function renderNotificationCenter(){
+      const unread=unreadNotificationCount();
+      return `<div class="notification-overlay" onclick="if(event.target===this)closeNotificationCenter()"><aside class="notification-panel"><div class="notification-head"><h2>Notification Center</h2><button class="modal-close" onclick="closeNotificationCenter()">×</button></div><div class="notification-toolbar"><button class="mark-read-btn" onclick="markAllNotificationsRead()" ${unread?'':'disabled'}>${unread?'Mark All as Read':'All Read'}</button><span class="notification-count">${unread?`${unread} unread notification${unread===1?'':'s'}`:'All notifications are read'}</span></div><div class="notification-list">${state.notifications.length?state.notifications.map(n=>`<article class="notification-item ${n.unread?'unread':''}"><div class="notification-item-head"><div class="notification-item-title">${escapeHtml(n.title)}</div><time class="notification-time">${n.time}</time></div><p class="notification-body">${escapeHtml(n.body)}</p><div class="notification-platform">${platformIcon(n.platform,true)}<span>${platformInfo(n.platform).name}</span></div><div><button class="notification-view" onclick="viewNotification('${n.id}')">View Details</button></div></article>`).join(''):`<div class="notification-empty"><div><b>No account verification notifications</b><p>New verification results will appear here.</p></div></div>`}</div></aside></div>`;
+    }
+
+    function creatorNavItem(view, label, icon) {
+      return `<button class="creator-nav-item ${state.creatorView === view ? 'active' : ''}" onclick="openCreator('${view}')"><span class="creator-nav-ico">${icon}</span><span>${label}</span></button>`;
+    }
+    function renderCreator() {
+      let content = '';
+      if (state.creatorView === 'social') content = renderSocialAccounts();
+      else if (state.creatorView === 'market') content = renderMarketplace();
+      else if (state.creatorView === 'campaign') content = renderCampaignDetail();
+      else if (state.creatorView === 'profile') content = renderProfile();
+      else content = renderPlaceholderCreator();
+      return `
+        <div class="creator-shell">
+          <aside class="creator-side">
+            <div class="creator-brand">${miLogo()}<div><div class="brand-title">MeetInfluencer</div><div class="brand-sub">Interactive Console</div></div></div>
+            <nav class="creator-nav">
+              ${creatorNavItem('market','Campaign Marketplace','◉')}
+              ${creatorNavItem('invitations','Collaboration Invitations','✉')}
+              ${creatorNavItem('campaigns','My Campaigns','▤')}
+              ${creatorNavItem('social','Social Accounts','◎')}
+              ${creatorNavItem('profile','Profile','♙')}
+            </nav>
+          </aside>
+          <header class="creator-top">
+            <button class="bell ${unreadNotificationCount()?'has-unread':''}" aria-label="Open notification center" onclick="openNotificationCenter()">${notificationBellIcon()}${unreadNotificationCount()?`<span class="bell-badge">${unreadNotificationCount()}</span>`:''}</button>
+            <button class="btn btn-creator" onclick="openCreator('market')">Browse Campaigns</button>
+            <button class="creator-account"><span class="mini-avatar">IG</span> 独立游戏开发者⌄</button>
+          </header>
+          <main class="creator-main"><div class="creator-wrap">${content}</div></main>
+          <button class="proto-home" onclick="goCover()">⌂ Prototype menu</button>
+        </div>`;
+    }
+
+    function renderSocialAccounts() {
+      return `
+        <div class="social-page-wide">
+        <div class="page-head"><div><h1>Social Accounts</h1><p>Verified accounts can be used to apply for advertiser campaigns. Each platform supports multiple accounts.</p></div></div>
+        <section class="platform-group-list">${platforms.map(renderPlatformGroup).join('')}</section>
+        <p class="platform-coming-soon">More platforms are coming soon...</p></div>`;
+    }
+
+    function renderPlatformGroup(p) {
+      const list = state.accounts[p.key] || [];
+      const groupStatus = platformStatus(p.key);
+      const verifiedCount = list.filter(a => a.status === 'verified').length;
+      const expanded = state.expanded.has(p.key);
+      const statusText = groupStatus === 'verified' ? `${verifiedCount} Verified` : groupStatus === 'pending' ? 'Under Review' : 'Not Verified';
+      return `
+        <article class="platform-group ${groupStatus}" data-platform="${p.key}">
+          <button class="platform-group-head" aria-expanded="${expanded}" onclick="togglePlatform('${p.key}')">
+            <div class="platform-summary">${platformIcon(p.key)}<div><div class="platform-summary-name">${p.name}</div><div class="platform-summary-note">Click to ${expanded?'collapse':'view'} account details</div></div></div>
+            <div class="platform-metric"><span>Accounts</span><b>${list.length} account${list.length===1?'':'s'}</b></div>
+            <div class="platform-metric"><span>Ready to apply</span><b>${verifiedCount}</b></div>
+            <span class="pill ${groupStatus}">${groupStatus === 'verified' ? '✓' : groupStatus === 'pending' ? '◷' : ''} ${statusText}</span>
+            <span class="group-chevron ${expanded ? 'up' : ''}" aria-hidden="true"></span>
+          </button>
+          <div class="account-reveal ${expanded ? 'open' : ''}"><div class="account-reveal-inner"><div class="platform-group-body">${renderGroupedAccountList(p,list)}</div></div></div>
+        </article>`;
+    }
+
+    function renderGroupedAccountList(p,list) {
+      return `<div class="group-account-head"><span>Account Name</span><span>Profile URL</span><span>Verification Method</span><span>Status</span><span style="text-align:right">Action</span></div>${list.length?list.map(a=>`<div class="group-account-row"><div class="group-account-identity"><div class="letter-avatar">${initials(a.name)}</div><b class="account-name">${escapeHtml(a.name)}</b></div><a class="group-account-url" href="${a.url}" target="_blank" title="${escapeHtml(a.url)}">${escapeHtml(a.url)}</a><span>${a.method}</span><span><span class="pill ${a.status}">${statusLabel(a.status)}</span></span><div class="group-account-action">${a.status==='rejected'?`<button class="text-btn" onclick="openResubmit('${p.key}','${a.id}')">Resubmit Verification</button>`:'<span style="color:#a1a9b6">—</span>'}</div>${a.status==='rejected'?`<div class="group-reject"><b>Reason:</b> ${escapeHtml(a.reason)}</div>`:''}${a.history?.length?`<details class="group-history"><summary>Verification history (${a.history.length})</summary>${a.history.map(h=>`<div class="account-history-item"><b>${h.status==='rejected'?'Rejected':h.status==='approved'?'Approved':'Resubmitted'}</b> · ${h.at}${h.by?` · ${h.by}`:''}${h.reason?`<div>${escapeHtml(h.reason)}</div>`:''}</div>`).join('')}</details>`:''}</div>`).join(''):`<div class="group-empty"><div><b>No linked ${p.name} accounts yet.</b><div style="margin-top:5px">Add an account to begin verification.</div></div></div>`}<div class="group-add-row"><button class="group-add" ${list.length>=10?'disabled title="Each platform supports up to 10 accounts"':''} onclick="openAddAccount('${p.key}')">+ Add ${p.name} Account</button></div>`;
+    }
+
+    function togglePlatform(key) {
+      const card=document.querySelector(`.platform-group[data-platform="${key}"]`); if(!card)return;
+      const reveal=card.querySelector('.account-reveal'); const button=card.querySelector('.platform-group-head'); const chevron=card.querySelector('.group-chevron');
+      const opening=!reveal.classList.contains('open');
+      reveal.classList.toggle('open',opening); chevron.classList.toggle('up',opening); button.setAttribute('aria-expanded',String(opening));
+      const note=card.querySelector('.platform-summary-note'); if(note)note.textContent=`Click to ${opening?'collapse':'view'} account details`;
+      opening ? state.expanded.add(key) : state.expanded.delete(key);
+    }
+    function openAddAccount(key) { state.manualUploaded = false; state.manualError = ''; state.manualDraft = null; state.modal = { type:'add', platform:key, method: platformInfo(key).oauth ? 'oauth' : 'manual' }; render(); }
+    function setAuthMethod(method) { if (state.modal && state.modal.type === 'add') { state.modal.method = method; state.manualError = ''; render(); } }
+    function openResubmit(platform, accountId) { state.manualUploaded = false; state.manualError = ''; state.manualDraft = null; state.modal = { type:'add', platform, method:'manual', resubmit:accountId }; render(); }
+
+    function renderAddModal(m) {
+      const p = platformInfo(m.platform);
+      const account = m.resubmit ? state.accounts[m.platform].find(a => a.id === m.resubmit) : null;
+      return `<div class="overlay"><div class="modal">
+        <div class="modal-head"><div class="modal-title">${account?'Resubmit':'Add'} ${p.name} Account</div><button class="modal-close" onclick="closeModal()">×</button></div>
+        <div class="modal-body">
+          <div class="modal-platform">${platformIcon(p.key)}<div><span>Platform</span><b>${p.name}</b></div></div>
+          ${p.oauth ? `<div class="method-tabs">
+            <button class="method-tab ${m.method === 'oauth' ? 'active' : ''}" onclick="setAuthMethod('oauth')">Third-party authorization<span class="recommended">Recommended</span></button>
+            <button class="method-tab ${m.method === 'manual' ? 'active' : ''}" onclick="setAuthMethod('manual')">Manual submission</button>
+          </div>` : ''}
+          ${m.method === 'oauth' ? renderOAuthIntro(p) : renderManualForm(p, account)}
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-neutral" onclick="closeModal()">Cancel</button>
+          ${m.method === 'oauth' ? `<button class="btn btn-creator" onclick="startOAuth('${p.key}')">Continue with ${p.name}</button>` : `<button class="btn btn-creator" onclick="submitManual('${p.key}','${account ? account.id : ''}')">${account?'Resubmit':'Submit'} for Review</button>`}
+        </div>
+      </div></div>`;
+    }
+
+    function renderOAuthIntro(p) {
+      return `<div class="oauth-info"><div class="oauth-lock">↗</div><h4>Connect securely with ${p.name}</h4><p>You will be redirected to ${p.name} to review the permissions and authorize MeetInfluencer.</p><div class="oauth-perms"><div>✓ Read your public profile and account ID</div><div>✓ Sync follower and content performance data</div><div>✓ Verify account ownership for campaign applications</div></div></div>`;
+    }
+
+    function renderManualForm(p, account) {
+      const defaultName = state.manualDraft?.name ?? (account ? account.name : ({instagram:'indie.game.lab',facebook:'Indie Game Lab',twitch:'indie_dev_live'}[p.key] || 'indie_creator'));
+      const defaultUrl = state.manualDraft?.url ?? (account ? account.url : ({instagram:'https://www.instagram.com/indie.game.lab',facebook:'https://www.facebook.com/indiegamelab',twitch:'https://www.twitch.tv/indie_dev_live'}[p.key] || `https://${p.key}.com/indie_creator`));
+      return `<div class="form-grid">
+        ${account && account.reason ? `<div class="guard-reason"><b>Previous rejection:</b> ${escapeHtml(account.reason)}</div>` : ''}
+        <div class="field"><label><span class="req">*</span>Account Name</label><input id="manual-name" class="input" maxlength="50" value="${escapeHtml(defaultName)}" onblur="validateManualField('name')" /><div id="manual-name-error" class="field-error"></div></div>
+        <div class="field"><label><span class="req">*</span>Profile URL</label><input id="manual-url" class="input" value="${escapeHtml(defaultUrl)}" onblur="validateManualField('url')" /><div id="manual-url-error" class="field-error"></div></div>
+        <div class="field"><label><span class="req">*</span>Profile Screenshot</label><div class="upload-box ${state.manualUploaded ? 'done' : ''}">${state.manualUploaded ? `<div class="upload-thumb">PROFILE</div><b style="font-size:11px;color:#15854b">profile-screenshot.png</b><div class="field-help">1.8 MB · PNG</div>` : `<button class="btn btn-soft" onclick="simulateUpload()">+ Choose Image</button><div class="field-help" style="margin-top:8px">JPG or PNG · One image · Up to 5 MB</div>`}</div><div id="manual-upload-error" class="field-error">${state.manualError || ''}</div></div>
+      </div>`;
+    }
+
+    function validateManualField(field) {
+      const nameEl=document.getElementById('manual-name'); const urlEl=document.getElementById('manual-url');
+      if (field==='name') {
+        const value=(nameEl?.value||'').trim();
+        document.getElementById('manual-name-error').textContent=!value?'Account name is required.':value.length>50?'Account name must be 50 characters or fewer.':'';
+      }
+      if (field==='url') {
+        const value=(urlEl?.value||'').trim(); let valid=true;
+        try { const parsed=new URL(value); valid=['http:','https:'].includes(parsed.protocol); } catch { valid=false; }
+        document.getElementById('manual-url-error').textContent=!value?'Profile URL is required.':!valid?'Enter a valid profile URL.':'';
+      }
+    }
+    function simulateUpload() { state.manualDraft={name:document.getElementById('manual-name')?.value||'',url:document.getElementById('manual-url')?.value||''}; state.manualUploaded = true; state.manualError = ''; render(); }
+    function submitManual(platform, accountId) {
+      validateManualField('name'); validateManualField('url');
+      const name = document.getElementById('manual-name')?.value.trim() || '';
+      const url = document.getElementById('manual-url')?.value.trim() || '';
+      const fieldError=!!document.querySelector('#manual-name-error:not(:empty),#manual-url-error:not(:empty)');
+      if (!state.manualUploaded) { state.manualError = 'Please upload a profile screenshot.'; document.getElementById('manual-upload-error').textContent=state.manualError; }
+      if (fieldError || !state.manualUploaded) return;
+      let account = accountId ? state.accounts[platform].find(a => a.id === accountId) : null;
+      if (account) {
+        account.history=account.history||[];
+        if(account.status==='rejected' && account.reason && !account.history.some(h=>h.status==='rejected'&&h.reason===account.reason)) account.history.push({status:'rejected',at:'2026-07-14 16:42:15',by:'ops@example.com',reason:account.reason});
+        account.history.push({status:'resubmitted',at:'2026-07-15 10:28:46'});
+        account.name = name; account.url = url; account.status = 'pending'; account.reason = '';
+      }
+      else {
+        account = { id:`${platform}-${Date.now()}`, name, url, status:'pending', method:'Manual Submission' };
+        state.accounts[platform].push(account);
+      }
+      const existingAudit = state.auditRows.find(r => r.mainCreator && r.accountId === account.id);
+      if (existingAudit) { existingAudit.status = 'pending'; existingAudit.account = name; existingAudit.url = url; existingAudit.submitted = '2026-07-15 10:28:46'; existingAudit.reason = ''; existingAudit.reviewer = ''; existingAudit.reviewedAt = ''; existingAudit.history=[...(account.history||[])]; }
+      else state.auditRows.unshift({ id:`audit-${Date.now()}`, creator:'独立游戏开发者', email:'creator.one@example.com', platform, account:name, url, submitted:'2026-07-15 10:28:46', status:'pending', accountId:account.id, mainCreator:true, history:[...(account.history||[])] });
+      state.expanded.add(platform); state.modal = null; render(); showToast('Your account has been submitted and is now under review.','success');
+    }
+
+    function startOAuth(key) { state.oauthProvider = key; state.oauthProcessing = false; state.modal = null; state.view = 'oauth'; render(); }
+    function openOAuthPicker() { state.modal = { type:'oauthPicker' }; render(); }
+    function renderOAuthPicker() {
+      return `<div class="overlay"><div class="modal sm"><div class="modal-head"><div class="modal-title">OAuth Platform Preview</div><button class="modal-close" onclick="closeModal()">×</button></div><div class="modal-body"><p style="margin:0 0 16px;color:#6f7a8c;font-size:12px;line-height:1.6">Choose a platform to preview its simulated authorization experience.</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${['tiktok','youtube','twitch','x'].map(k => `<button class="method-tab" onclick="startOAuth('${k}')">${platformIcon(k,true)} ${platformInfo(k).name}</button>`).join('')}</div></div></div></div>`;
+    }
+
+    function renderOAuth() {
+      const p = platformInfo(state.oauthProvider);
+      const providerAccounts = { tiktok:['IndieDevLab','@indiedevlab'], youtube:['Indie Game Explorer','linked-channel@example.com'], twitch:['indie_dev_live','@indie_dev_live'], x:['Indie Game Lab','@indiegamelab'] };
+      const addr = { tiktok:'https://www.tiktok.com/auth/authorize', youtube:'https://accounts.google.com/o/oauth2/auth', twitch:'https://id.twitch.tv/oauth2/authorize', x:'https://x.com/i/oauth2/authorize' }[p.key];
+      return `<div class="provider-page ${p.key}">
+        <div class="provider-browser"><div class="browser-bar"><div class="browser-dots"><i></i><i></i><i></i></div><div class="address">🔒 ${addr}</div></div>
+          <div class="provider-content">${state.oauthProcessing ? `<div class="processing"><div class="spinner"></div><h2>Authorizing MeetInfluencer</h2><p style="color:#778092;font-size:12px">Please keep this window open...</p></div>` : `<section class="provider-consent">
+            <div class="provider-logo">${platformIcon(p.key)} ${p.name}</div>
+            <h1>Authorize MeetInfluencer</h1>
+            <p>MeetInfluencer would like permission to connect your ${p.name} account.</p>
+            <div class="provider-app">${miLogo()}<b>MeetInfluencer</b></div>
+            <div class="provider-account"><div class="provider-avatar">${initials(providerAccounts[p.key][0])}</div><div><b>${providerAccounts[p.key][0]}</b><span>${providerAccounts[p.key][1]}</span></div><span style="margin-left:auto;color:#8a94a6">Change</span></div>
+            <div class="permission-list"><div><span class="perm-check">✓</span>View your public profile and account ID</div><div><span class="perm-check">✓</span>View follower count and public content metrics</div><div><span class="perm-check">✓</span>Verify account ownership for campaign applications</div></div>
+            <div class="provider-actions"><button class="provider-deny" onclick="oauthCancel()">Cancel</button><button class="provider-allow" onclick="oauthAuthorize()">${p.key === 'youtube' ? 'Continue' : 'Authorize'}</button></div>
+            <button class="provider-error-link" onclick="oauthFailure()">Simulate an authorization error</button>
+          </section>`}</div>
+        </div><button class="proto-home" onclick="goCover()">⌂ Prototype menu</button>
+      </div>`;
+    }
+
+    function oauthAuthorize() {
+      state.oauthProcessing = true; render();
+      setTimeout(() => {
+        const p = state.oauthProvider;
+        if (!state.accounts[p].some(a => a.status === 'verified')) {
+          const defaults = { x:['Indie Game Lab','https://x.com/indiegamelab'], twitch:['indie_dev_live','https://www.twitch.tv/indie_dev_live'], tiktok:['IndieDevLab Pro','https://www.tiktok.com/@indiedevlabpro'], youtube:['Indie Dev Shorts','https://www.youtube.com/@indiedevshorts'] }[p];
+          state.accounts[p].push({ id:`oauth-${p}-${Date.now()}`, name:defaults[0], url:defaults[1], status:'verified', method:'OAuth' });
+        }
+        state.expanded.add(p); state.view = 'creator'; state.creatorView = 'social'; state.oauthProcessing = false; render(); showToast(`${platformInfo(p).name} account connected successfully.`,'success');
+      }, 850);
+    }
+    function oauthCancel() { const p=state.oauthProvider; state.view='creator'; state.creatorView='social'; render(); showToast(`${platformInfo(p).name} authorization was not completed. Your account status has not changed.`,'warning'); }
+    function oauthFailure() { const p=state.oauthProvider; state.view='creator'; state.creatorView='social'; render(); showToast(`${platformInfo(p).name} authorization failed. Please try again later.`,'error'); }
+
+    function renderMarketplace() {
+      const cards = [
+        {title:'Indie Games Global Launch', platforms:['instagram','youtube'], price:'USD 350–800', region:'US / GB', art:''},
+        {title:'Creator Tools Review', platforms:['youtube'], price:'USD 450–1,200', region:'US / CA', art:'purple'},
+        {title:'Live Gaming Weekend', platforms:['twitch'], price:'USD 260–620', region:'SG / MY', art:'alt'}
+      ];
+      return `<div class="page-head"><div><h1>Campaign Marketplace</h1></div><button class="btn btn-soft">View Application Progress</button></div>
+        <div class="creator-panel market-filter"><div class="fake-select">Promotion Platforms⌄</div><div class="fake-select">Promotion Region⌄</div><div class="fake-select">Influencer Tags⌄</div><div class="fake-select">Follower Requirement⌄</div><div class="fake-select">Budget Amount⌄</div><button class="btn btn-creator">Reset</button></div>
+        <section class="campaign-grid">${cards.map((c,i) => `<article class="campaign-card"><div class="campaign-art ${c.art}">${platformIcon(c.platforms[0],true)}<div class="campaign-lines"><i></i><i style="width:78%"></i><i style="width:55%"></i></div></div><div class="campaign-body"><div class="campaign-title-row"><div class="campaign-title">${c.title}</div><span class="pill pending">Recruiting</span></div><div style="display:flex;gap:5px;margin-top:9px">${c.platforms.map(k=>platformIcon(k,true)).join('')}</div><div class="campaign-deadline">Deadline 2026/08/${i? '15':'31'}</div><div class="campaign-foot"><div><div class="metric-label">Compensation</div><div class="metric-value price">${c.price}</div></div><div><div class="metric-label">Region</div><div class="metric-value">${c.region}</div></div><button class="btn btn-creator apply-small" onclick="openCampaign('${c.platforms[0]}')">Apply</button></div></div></article>`).join('')}</section>`;
+    }
+    function openCampaign(platform) { state.selectedCampaignPlatform = platform; state.creatorView = 'campaign'; render(); }
+    function selectCampaignPlatform(platform) { state.selectedCampaignPlatform = platform; render(); }
+    function renderCampaignDetail() {
+      const current = state.selectedCampaignPlatform;
+      return `<div class="page-head"><div><h1>Campaign Details</h1></div><button class="btn btn-soft" onclick="openCreator('market')">Back</button></div>
+        <section class="creator-panel campaign-summary"><div class="campaign-summary-top"><div class="campaign-title-wrap"><div class="campaign-logo">INDIE<br/>PLAY</div><div><div style="font-size:11px;color:#e43d8e;font-weight:800">#G-1048</div><div class="campaign-big">Indie Games Global Launch</div><div class="summary-meta"><div><span class="metric-label">Application Deadline</span><b>2026/08/31</b></div><div><span class="metric-label">Promotion Region</span><b>US · GB · CA</b></div><div><span class="metric-label">Promotion Platforms</span><b>Instagram · YouTube</b></div></div></div></div><button class="btn btn-creator" onclick="attemptApply()">${state.appliedPlatforms.has(current) ? 'Applied' : 'Apply Now'}</button></div></section>
+        <section class="creator-panel detail-block"><div style="display:flex;align-items:center;justify-content:space-between"><h3>View requirements by platform</h3><span class="pill pending">Viewing: ${platformInfo(current).name}</span></div><div class="platform-tabs"><button class="platform-tab ${current==='instagram'?'active':''}" onclick="selectCampaignPlatform('instagram')">${platformIcon('instagram',true)} Instagram</button><button class="platform-tab ${current==='youtube'?'active':''}" onclick="selectCampaignPlatform('youtube')">${platformIcon('youtube',true)} YouTube</button></div><div class="requirements"><div class="req-item"><span>Followers</span><b>${current==='instagram'?'20k – 180k':'10k – 250k'}</b></div><div class="req-item"><span>Influencer Type</span><b>Gaming · Reviews</b></div><div class="req-item"><span>Content Format</span><b>${current==='instagram'?'Reels · Story':'Long video'}</b></div><div class="req-item"><span>Deadline</span><b>2026/08/31</b></div></div></section>
+        <section class="creator-panel detail-block"><h3>Requirements</h3><p style="font-size:13px;line-height:1.8;color:#4c5668">Create authentic gameplay content for a global indie game launch. Highlight the discovery experience, key gameplay features, and your honest creator perspective.</p></section>
+        <section class="creator-panel detail-block"><h3>Compensation Overview</h3><div class="comp-grid"><div class="comp-card"><span>Platform Compensation</span><b>${current==='instagram'?'USD 350–800':'USD 450–1,200'}</b></div><div class="comp-card"><span>Collaboration Type</span><b>${current==='instagram'?'Short video':'Full video'}</b></div><div class="comp-card"><span>Payment Method</span><b>Fixed price</b></div><div class="comp-card"><span>Payment Terms</span><b>Per agreement</b></div></div></section>`;
+    }
+
+    function attemptApply() {
+      const p = state.selectedCampaignPlatform;
+      if (state.appliedPlatforms.has(p)) { showToast('You have already applied for this platform.','warning'); return; }
+      const list = state.accounts[p] || [];
+      const verified = list.filter(a => a.status === 'verified');
+      if (verified.length) state.modal = { type:'apply', platform:p };
+      else if (list.some(a => a.status === 'pending')) state.modal = { type:'guard', platform:p, status:'pending' };
+      else if (list.some(a => a.status === 'rejected')) state.modal = { type:'guard', platform:p, status:'rejected', account:list.find(a=>a.status==='rejected') };
+      else state.modal = { type:'guard', platform:p, status:'none' };
+      render();
+    }
+    function renderGuardModal(m) {
+      const p = platformInfo(m.platform);
+      const copy = m.status === 'pending' ? {icon:'◷',title:'Verification in progress',body:`Your ${p.name} account is under review. You can apply once it has been verified.`,cta:'View Verification Status'} : m.status === 'rejected' ? {icon:'!',title:'Verification required',body:`Your ${p.name} account was not approved. Update the information and resubmit before applying.`,cta:'Resubmit Verification'} : {icon:'◎',title:`Connect a verified ${p.name} account`,body:`A verified ${p.name} account is required before you can apply for this campaign.`,cta:`Verify ${p.name} Account`};
+      return `<div class="overlay"><div class="modal sm"><div class="modal-head"><div class="modal-title">Complete Account Verification</div><button class="modal-close" onclick="closeModal()">×</button></div><div class="modal-body guard-body"><div class="guard-icon">${copy.icon}</div><h3>${copy.title}</h3><p>${copy.body}</p>${m.status==='rejected' ? `<div class="guard-reason"><b>Reason:</b> ${escapeHtml(m.account.reason)}</div>`:''}</div><div class="modal-foot"><button class="btn btn-neutral" onclick="closeModal()">Cancel</button><button class="btn btn-creator" onclick="goToVerification('${m.platform}','${m.status}')">${copy.cta}</button></div></div></div>`;
+    }
+    function goToVerification(platform,status) { state.modal=null; state.expanded.add(platform); state.creatorView='social'; render(); if(status==='none') setTimeout(()=>openAddAccount(platform),120); }
+    function renderApplyModal(m) {
+      const p = platformInfo(m.platform); const accounts = state.accounts[m.platform].filter(a=>a.status==='verified');
+      return `<div class="overlay"><div class="modal"><div class="modal-head"><div class="modal-title">Apply for ${p.name}</div><button class="modal-close" onclick="closeModal()">×</button></div><div class="modal-body"><div class="form-grid"><div class="field"><label><span class="req">*</span>Application Account</label><select id="application-account" class="select">${accounts.map(a=>`<option value="${a.id}">${p.name} · ${a.name}</option>`).join('')}</select><div class="field-help">Only verified ${p.name} accounts are available.</div></div><div class="field"><label><span class="req">*</span>Proposed Price (USD)</label><input id="application-price" class="input" type="number" value="${m.platform==='youtube'?'780':'520'}" min="${m.platform==='youtube'?'450':'350'}" max="${m.platform==='youtube'?'1200':'800'}"/><div class="field-help">Allowed range: ${m.platform==='youtube'?'USD 450–1,200':'USD 350–800'}</div></div><div class="field"><label><span class="req">*</span>Application Reason</label><textarea id="application-reason" class="textarea">I create detailed indie game reviews and can deliver an authentic, audience-focused campaign story.</textarea></div></div></div><div class="modal-foot"><button class="text-btn" onclick="closeModal();openCreator('social')">Manage Social Accounts</button><span style="flex:1"></span><button class="btn btn-neutral" onclick="closeModal()">Cancel</button><button class="btn btn-creator" onclick="submitApplication('${m.platform}')">Submit Application</button></div></div></div>`;
+    }
+    function submitApplication(platform) { state.appliedPlatforms.add(platform); state.modal=null; render(); showToast('Application submitted successfully.','success'); }
+
+    function renderProfile() {
+      const verified = platforms.filter(p => state.accounts[p.key].some(a=>a.status==='verified'));
+      const instagramFallback = verified.some(p=>p.key==='instagram') ? '' : `<div class="overview-row"><div class="overview-platform">${platformIcon('instagram',true)} Instagram</div><span class="pill ${platformStatus('instagram')}">${statusLabel(platformStatus('instagram'))}</span></div>`;
+      return `<div class="page-head"><div><h1>Profile</h1></div><button class="btn btn-creator">Save</button></div><section class="profile-layout"><div class="creator-panel profile-form"><div class="field"><label><span class="req">*</span>Influencer Name</label><input class="input" value="独立游戏开发者"/></div><div class="field"><label>Contact Name</label><input class="input" value="文森特"/></div><div class="field"><label><span class="req">*</span>Email</label><input class="input" value="creator.one@example.com" disabled/></div><div class="field"><label>Phone Number</label><input class="input" value="+1 123 411"/></div><div class="field wide"><label>System-Generated Tags</label><div style="display:flex;gap:7px;padding:5px 0"><span class="tag">Indie Games</span><span class="tag">Game Reviews</span><span class="tag">Developer Stories</span></div><div class="field-help">Tags are generated from verified account content, collaboration history, and review results.</div></div><div class="field wide"><label>Bio</label><textarea class="textarea">Independent game explorer, developer storyteller, and long-form review creator.</textarea></div></div><aside class="creator-panel profile-aside"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px"><h3>Social Account Overview</h3><button class="btn btn-soft" style="padding:0 10px;min-height:34px" onclick="openCreator('social')">Manage</button></div>${verified.map(p=>`<div class="overview-row"><div class="overview-platform">${platformIcon(p.key,true)} ${p.name}</div><span class="pill verified">${state.accounts[p.key].filter(a=>a.status==='verified').length} verified</span></div>`).join('')}${instagramFallback}</aside></section>`;
+    }
+    function renderPlaceholderCreator() { return `<div class="page-head"><div><h1>${state.creatorView === 'invitations' ? 'Collaboration Invitations' : 'My Campaigns'}</h1><p>This existing product area is outside the current prototype flow.</p></div></div><div class="creator-panel empty-state"><div><div class="empty-icon">◇</div><b>No items to display</b></div></div>`; }
+
+    /* Operations */
+    function opsNavItem(view,label,icon,activeView=view) { return `<button class="ops-menu-item ${state.opsView===activeView?'active':''}" onclick="openOps('${view}')"><span class="ops-menu-ico">${icon}</span>${label}</button>`; }
+    function renderOps() {
+      let content = state.opsView === 'dashboard' ? renderOpsDashboard() : state.opsView === 'audit' ? renderAuditList() : state.opsView === 'influencer' ? renderInfluencerDetail() : renderOpsPlaceholder();
+      return `<div class="ops-shell"><aside class="ops-side"><div class="ops-brand"><div class="ops-vmark"></div><span>Influencer<br/>Operations</span></div><nav class="ops-menu">${opsNavItem('dashboard','数据看板','▦')}<div class="ops-subtitle"><span class="ops-menu-ico">◉</span>用户管理</div><div class="ops-submenu">${opsNavItem('advertisers','广告主管理','', 'advertisers')}${opsNavItem('influencer','达人管理','', 'influencer')}</div><div class="ops-subtitle"><span class="ops-menu-ico">▣</span>审核管理</div><div class="ops-submenu">${opsNavItem('activity','活动审核','', 'activity')}${opsNavItem('application','报名审核','', 'application')}${opsNavItem('audit','达人认证审核','', 'audit')}${opsNavItem('invitation','邀请审核','', 'invitation')}${opsNavItem('content','产物审核','', 'content')}</div>${opsNavItem('operations','运营管理','▦','operations')}${opsNavItem('finance','财务管理','▱','finance')}${opsNavItem('settings','系统设置','⚙','settings')}</nav></aside><header class="ops-top"><div class="ops-top-left">☰ <span>⌾ ${state.opsView==='audit'?'审核管理 / 达人认证审核':state.opsView==='influencer'?'用户管理 / 达人详情':'数据看板'}</span></div><div class="ops-top-right"><button class="btn btn-blue" style="min-height:31px">+ 创建官方任务</button><span>⛶</span><span>文</span><span class="ops-email">👤 ops@example.com</span></div></header><div class="ops-tabs"><span class="ops-tab">数据看板</span>${state.opsView!=='dashboard'?`<span class="ops-tab active">${state.opsView==='audit'?'达人认证审核':state.opsView==='influencer'?'达人详情':'工作台'}</span>`:''}</div><main class="ops-main">${content}</main><button class="proto-home" onclick="goCover()">⌂ Prototype menu</button></div>`;
+    }
+
+    function pendingCount(){ return state.auditRows.filter(r=>r.status==='pending').length; }
+    function renderOpsDashboard() {
+      return `<section class="ops-hero"><div><div style="color:#53dfaa;font-size:11px">● 运营后台</div><h1>运营总览</h1><p>聚合查看广告主、达人、任务和待处理审核等运营数据，点击卡片可跳转对应模块。</p></div><button class="btn btn-blue" onclick="openOps('audit')">进入认证审核</button></section><section class="ops-kpis"><div class="ops-kpi green"><span>广告主数</span><b>32</b><small>正常账号 32 个</small></div><div class="ops-kpi"><span>已认证达人数</span><b>3</b><small>可参与任务合作</small></div><div class="ops-kpi orange"><span>任务数</span><b>16</b><small>广告主任务 + 官方任务</small></div><div class="ops-kpi red" onclick="openOps('audit')" style="cursor:pointer"><span>待处理审核 ↗</span><b>${21 + pendingCount()}</b><small>活动 / 报名 / 认证 / 产物</small></div><div class="ops-kpi purple"><span>履约跟进中</span><b>0</b><small>内容审核中 / 待发布</small></div><div class="ops-kpi gray"><span>已发布任务</span><b>0</b><small>可继续跟踪效果与结算</small></div></section>`;
+    }
+
+    function getFilteredAuditRows() {
+      if (state.auditFiltered) return state.auditFiltered;
+      return state.auditRows;
+    }
+    function renderAuditList() {
+      const rows = getFilteredAuditRows();
+      return `<section class="ops-card"><div class="ops-card-head"><div class="ops-card-title">达人认证审核</div><div class="ops-count">共 ${rows.length} 条</div></div><div class="ops-filter"><input id="audit-q" class="ops-input search" placeholder="搜索达人昵称 / 社媒账号名称" value="${escapeHtml(state.auditFilters.q)}"/><select id="audit-platform" class="ops-select"><option value="all">全部平台</option>${platforms.map(p=>`<option value="${p.key}" ${state.auditFilters.platform===p.key?'selected':''}>${p.name}</option>`).join('')}</select><select id="audit-status" class="ops-select"><option value="all">全部状态</option><option value="pending" ${state.auditFilters.status==='pending'?'selected':''}>待审核</option><option value="approved" ${state.auditFilters.status==='approved'?'selected':''}>已通过</option><option value="rejected" ${state.auditFilters.status==='rejected'?'selected':''}>已驳回</option></select><input id="audit-from" class="ops-input ops-date" type="date" value="${state.auditFilters.from}"/><span style="font-size:11px;color:#8995a5">→</span><input id="audit-to" class="ops-input ops-date" type="date" value="${state.auditFilters.to}"/><div class="ops-filter-spacer"></div><button class="btn btn-blue" onclick="applyAuditFilters()">⌕ 查询</button><button class="btn btn-neutral" onclick="resetAuditFilters()">↻ 重置</button></div><div class="ops-table-wrap"><table class="ops-table"><colgroup><col style="width:15%"><col style="width:8%"><col style="width:12%"><col style="width:18%"><col style="width:7%"><col style="width:13%"><col style="width:9%"><col style="width:18%"></colgroup><thead><tr><th>达人</th><th>平台</th><th>账号</th><th>主页链接</th><th>截图</th><th>提交时间</th><th>状态</th><th>操作</th></tr></thead><tbody>${rows.map(renderAuditRow).join('') || `<tr><td colspan="8"><div class="empty-state"><div><div class="empty-icon">◇</div>暂无符合条件的认证申请</div></div></td></tr>`}</tbody></table><div class="pagination"><span>共 ${rows.length} 条</span><span class="page-box">‹</span><span class="page-box active">1</span><span class="page-box">›</span><span>20条/页</span></div></div></section>`;
+    }
+    function renderAuditRow(r) {
+      return `<tr><td><div class="ops-person"><div class="ops-avatar">${initials(r.creator)}</div><div><b>${r.creator}</b><span>${r.email}</span></div></div></td><td>${platformIcon(r.platform,true)}</td><td><b style="color:#34495e">${r.account}</b></td><td><a class="profile-url" href="${r.url}" target="_blank">${r.url}</a></td><td><button class="shot-thumb" aria-label="查看截图" onclick="openPreview('${r.id}')"></button></td><td>${r.submitted}</td><td><span class="pill ${r.status}">${r.status==='pending'?'待审核':r.status==='approved'?'已通过':'已驳回'}</span></td><td><div class="ops-actions"><button class="text-btn blue" onclick="openAuditDrawer('${r.id}')">查看详情</button>${r.status==='pending'?`<button class="text-btn green" onclick="openApprove('${r.id}')">通过</button><button class="text-btn red" onclick="openReject('${r.id}')">驳回</button>`:''}</div></td></tr>`;
+    }
+    function applyAuditFilters() {
+      const q=(document.getElementById('audit-q')?.value||'').trim().toLowerCase(); const platform=document.getElementById('audit-platform')?.value||'all'; const status=document.getElementById('audit-status')?.value||'all'; const from=document.getElementById('audit-from')?.value||''; const to=document.getElementById('audit-to')?.value||'';
+      state.auditFilters={q,platform,status,from,to}; state.auditFiltered=state.auditRows.filter(r=>(!q||r.creator.toLowerCase().includes(q)||r.account.toLowerCase().includes(q))&&(platform==='all'||r.platform===platform)&&(status==='all'||r.status===status)&&(!from||r.submitted.slice(0,10)>=from)&&(!to||r.submitted.slice(0,10)<=to)); render();
+    }
+    function resetAuditFilters() { state.auditFilters={q:'',platform:'all',status:'all',from:'',to:''}; state.auditFiltered=null; render(); }
+    function getAudit(id){ return state.auditRows.find(r=>r.id===id); }
+    function openAuditDrawer(id){ state.drawer={type:'audit',id}; render(); }
+    function closeDrawer(){ const overlay=document.querySelector('.drawer-overlay'); if(!overlay){state.drawer=null;render();return;} overlay.classList.add('closing'); setTimeout(()=>{state.drawer=null;render();},240); }
+    function renderAuditHistory(r){ return (r.history||[]).map(h=>`<div class="timeline-item"><b>${h.status==='rejected'?'历史驳回':h.status==='approved'?'历史通过':'达人重新提交'}</b><div>${h.at}${h.by?` · ${h.by}`:''}</div>${h.reason?`<div style="color:#c44652;margin-top:5px">${escapeHtml(h.reason)}</div>`:''}</div>`).join(''); }
+    function renderAuditDrawer(d){
+      const r=getAudit(d.id); return `<div class="drawer-overlay" onclick="if(event.target===this)closeDrawer()"><aside class="drawer"><div class="drawer-head"><div><b>认证申请详情</b><div style="font-size:10px;color:#8b96a5;margin-top:3px">申请编号 ${r.id.toUpperCase()}</div></div><button class="modal-close" onclick="closeDrawer()">×</button></div><div class="drawer-body"><div class="audit-person-card"><div class="ops-avatar">${initials(r.creator)}</div><div><b>${r.creator}</b><span>${r.email}</span></div><span class="pill ${r.status}" style="margin-left:auto">${r.status==='pending'?'待审核':r.status==='approved'?'已通过':'已驳回'}</span></div><section class="detail-section"><h4>账号资料</h4><div class="kv-grid"><div class="kv"><span>平台</span><b style="display:flex;align-items:center;gap:7px">${platformIcon(r.platform,true)} ${platformInfo(r.platform).name}</b></div><div class="kv"><span>账号名称</span><b>${r.account}</b></div><div class="kv" style="grid-column:1/-1"><span>主页链接</span><a class="profile-url" href="${r.url}" target="_blank">${r.url}</a></div></div></section><section class="detail-section"><h4>主页截图</h4><button class="shot-thumb" style="width:150px;height:105px" onclick="openPreview('${r.id}')"></button><div style="font-size:10px;color:#8994a5;margin-top:7px">点击查看大图、缩放、旋转或查看原图</div></section><section class="detail-section"><h4>审核记录</h4><div class="timeline">${renderAuditHistory(r)}<div class="timeline-item"><b>达人提交认证申请</b><div>${r.submitted} · 手工提交</div></div>${r.status!=='pending'?`<div class="timeline-item"><b>${r.status==='approved'?'运营审核通过':'运营审核驳回'}</b><div>${r.reviewedAt} · ${r.reviewer}</div>${r.reason?`<div style="color:#c44652;margin-top:5px">${r.reason}</div>`:''}</div>`:''}</div></section></div>${r.status==='pending'?`<div class="drawer-foot"><button class="btn btn-neutral" onclick="openReject('${r.id}')" style="color:#e84e5d">驳回</button><button class="btn btn-blue" onclick="openApprove('${r.id}')">通过认证</button></div>`:''}</aside></div>`;
+    }
+    function openApprove(id){ state.modal={type:'approve',id}; render(); }
+    function renderApproveModal(m){ const r=getAudit(m.id); return `<div class="overlay"><div class="modal sm"><div class="modal-head"><div class="modal-title">确认通过认证？</div><button class="modal-close" onclick="closeModal()">×</button></div><div class="modal-body"><p style="font-size:13px;line-height:1.7;color:#5f6b7d;margin-top:0">通过后，<b>${r.creator}</b> 的 <b>${platformInfo(r.platform).name} · ${r.account}</b> 将立即变为已认证，并可用于报名对应平台商单。</p><div class="audit-person-card">${platformIcon(r.platform)}<div><b>${r.account}</b><span>${r.url}</span></div></div></div><div class="modal-foot"><button class="btn btn-neutral" onclick="closeModal()">取消</button><button class="btn btn-blue" onclick="performApprove('${r.id}')">确认通过</button></div></div></div>`; }
+    function performApprove(id){ const r=getAudit(id); if(r.conflict){ r.status='approved';r.reviewer='reviewer@example.com';r.reviewedAt='2026-07-15 10:31:05';r.conflict=false;state.modal=null;state.drawer=null;state.auditFiltered=null;render();showToast('该申请已被其他运营处理，列表已自动刷新。','warning');return;} r.status='approved';r.reviewer='ops@example.com';r.reviewedAt='2026-07-15 10:30:18';if(r.mainCreator&&r.accountId){const a=state.accounts[r.platform].find(a=>a.id===r.accountId);if(a){a.status='verified';a.reason='';a.history=a.history||[];a.history.push({status:'approved',at:r.reviewedAt,by:r.reviewer});}addVerificationNotification('verified',r);}state.modal=null;state.drawer=null;state.auditFiltered=null;render();showToast('认证已通过，达人端状态将在 3 秒内同步。','success'); }
+    function openReject(id){ state.modal={type:'reject',id}; render(); }
+    function chooseReason(text){ const el=document.getElementById('reject-reason'); if(el) el.value=text; }
+    function renderRejectModal(m){ const r=getAudit(m.id); return `<div class="overlay"><div class="modal sm"><div class="modal-head"><div class="modal-title">驳回认证申请</div><button class="modal-close" onclick="closeModal()">×</button></div><div class="modal-body"><div class="audit-person-card"><div class="ops-avatar">${initials(r.creator)}</div><div><b>${r.creator}</b><span>账号：${r.account}</span></div><div style="margin-left:auto;display:flex;align-items:center;gap:7px">${platformIcon(r.platform,true)}<b style="font-size:13px;line-height:1.2">${platformInfo(r.platform).name}</b></div></div><div class="reason-chips"><button class="reason-chip" onclick="chooseReason('主页链接无法访问，请检查链接有效性后重新提交。')">主页无法访问</button><button class="reason-chip" onclick="chooseReason('主页截图与提交账号不匹配，请重新上传完整截图。')">截图与账号不符</button><button class="reason-chip" onclick="chooseReason('认证信息不完整，请补充后重新提交。')">信息不完整</button></div><div class="field"><label><span class="req">*</span>驳回原因</label><textarea id="reject-reason" class="textarea" maxlength="200" placeholder="请输入驳回原因，最多 200 字"></textarea><div class="field-help">驳回原因将在达人端账号详情中展示。</div><div id="reject-error" class="field-error"></div></div></div><div class="modal-foot"><button class="btn btn-neutral" onclick="closeModal()">取消</button><button class="btn btn-danger" onclick="performReject('${r.id}')">确认驳回</button></div></div></div>`; }
+    function performReject(id){ const reason=(document.getElementById('reject-reason')?.value||'').trim(); if(!reason){document.getElementById('reject-error').textContent='驳回原因不能为空。';return;}const r=getAudit(id);r.status='rejected';r.reason=reason;r.reviewer='ops@example.com';r.reviewedAt='2026-07-15 10:32:40';if(r.mainCreator&&r.accountId){const a=state.accounts[r.platform].find(a=>a.id===r.accountId);if(a){a.status='rejected';a.reason=reason;a.history=a.history||[];a.history.push({status:'rejected',at:r.reviewedAt,by:r.reviewer,reason});}addVerificationNotification('rejected',r);}state.modal=null;state.drawer=null;state.auditFiltered=null;render();showToast('认证申请已驳回，原因已同步给达人。','success'); }
+
+    function openPreview(id){ state.modal={type:'preview',id};state.previewZoom=1;state.previewRotate=0;render(); }
+    function changePreview(action){ if(action==='in')state.previewZoom=Math.min(1.8,state.previewZoom+.2);if(action==='out')state.previewZoom=Math.max(.6,state.previewZoom-.2);if(action==='rotate')state.previewRotate=(state.previewRotate+90)%360;const shot=document.getElementById('mock-shot');if(shot)shot.style.transform=`scale(${state.previewZoom}) rotate(${state.previewRotate}deg)`; }
+    function renderPreviewModal(m){ const r=getAudit(m.id);return `<div class="overlay"><div class="modal lg"><div class="modal-head"><div class="modal-title">主页截图 · ${r.account}</div><button class="modal-close" onclick="closeModal()">×</button></div><div class="preview-stage"><div id="mock-shot" class="mock-shot"><div class="mock-shot-bar"><i></i><i></i><i></i><span style="margin-left:10px;font-size:9px;color:#8994a4">${r.url}</span></div><div class="mock-profile"><div class="mock-profile-photo">${initials(r.account)}</div><div class="mock-profile-lines"><i style="width:65%"></i><i style="width:88%"></i><i style="width:45%"></i></div></div><div class="mock-stats"><div class="mock-stat"><b>452K</b><br/>Followers</div><div class="mock-stat"><b>3.8%</b><br/>Engagement</div><div class="mock-stat"><b>168</b><br/>Posts</div></div><div class="mock-gallery"><div></div><div></div><div></div></div></div></div><div class="preview-controls"><button onclick="changePreview('out')">−</button><button onclick="changePreview('in')">＋</button><button onclick="changePreview('rotate')">↻</button><button style="width:auto;padding:0 12px" onclick="showToast('已在新窗口打开原图。','success')">查看原图</button></div></div></div>`; }
+
+    function renderInfluencerDetail(){ const verified=platforms.flatMap(p=>state.accounts[p.key].filter(a=>a.status==='verified').map(a=>({...a,platform:p.key})));return `<section class="ops-card"><div class="ops-card-head"><div class="ops-card-title">达人详情</div><button class="btn btn-neutral" onclick="openOps('audit')">返回认证审核</button></div><div class="influencer-head"><div class="big-avatar">IG</div><div><h2>独立游戏开发者</h2><p>文森特 · creator.one@example.com</p></div></div><div class="detail-kpis"><div class="detail-kpi"><span>账号状态</span><b><span class="pill approved">正常</span></b></div><div class="detail-kpi" onclick="document.getElementById('social-list').scrollIntoView({behavior:'smooth'})" style="cursor:pointer"><span>已认证社媒账号</span><b>${verified.length} ↘</b></div><div class="detail-kpi"><span>历史任务</span><b>6</b></div></div><div class="detail-tabs"><button class="detail-tab">任务明细</button><button class="detail-tab active">Social Accounts</button></div><div id="social-list" class="ops-table-wrap" style="padding-top:16px"><table class="ops-table"><thead><tr><th>平台</th><th>账号</th><th>主页链接</th><th>认证方式</th><th>认证状态</th></tr></thead><tbody>${platforms.flatMap(p=>state.accounts[p.key].map(a=>`<tr><td>${platformIcon(p.key,true)} ${p.name}</td><td>${a.name}</td><td><a class="profile-url" href="${a.url}" target="_blank">${a.url}</a></td><td>${a.method}</td><td><span class="pill ${a.status}">${a.status==='verified'?'已认证':a.status==='pending'?'审核中':'审核失败'}</span></td></tr>`)).join('')}</tbody></table></div></section>`; }
+    function renderOpsPlaceholder(){return `<section class="ops-card"><div class="ops-card-head"><div class="ops-card-title">现有运营模块</div></div><div class="empty-state" style="min-height:420px"><div><div class="empty-icon">▦</div><b>该模块不在本次认证原型范围内</b></div></div></section>`;}
+
+    function renderStateGallery(){ return `<main class="state-page"><div class="state-head"><h1>Component & Edge States</h1><p>认证流程的加载、空态、错误和并发处理组件。</p></div><section class="state-grid"><article class="state-card"><h3>Loading · Social Accounts</h3><div class="skeleton"><div class="sk-line" style="width:44%"></div><div class="sk-line"></div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px"><div class="sk-line" style="height:110px"></div><div class="sk-line" style="height:110px"></div><div class="sk-line" style="height:110px"></div></div></div></article><article class="state-card"><h3>空状态 · 认证审核队列（运营端）</h3><div class="empty-state"><div><div class="empty-icon">◇</div><b>暂无待审核的认证申请</b><div style="font-size:11px;margin-top:7px">达人新提交的手工认证申请将在此展示。</div></div></div></article><article class="state-card"><h3>Interface error</h3><div class="error-banner"><span>加载失败，请检查网络后重试。</span><button class="btn btn-neutral" onclick="showToast('数据已重新加载。','success')">重试</button></div><div style="height:18px"></div><div class="error-banner"><span>Screenshot upload failed. Your form data has been preserved.</span><button class="btn btn-soft">Upload again</button></div></article><article class="state-card"><h3>并发审核冲突（运营端）</h3><div class="conflict-card"><b>该申请已被其他运营处理</b><br/>当前详情已失效，系统将自动刷新记录并展示最新审核结果。</div><button class="btn btn-blue" style="margin-top:15px" onclick="openOps('audit')">查看可操作示例</button></article></section><button class="proto-home" onclick="goCover()">⌂ Prototype menu</button></main>`; }
+
+    function closeModal(){ state.modal=null; render(); }
+    function renderOverlay(){
+      if (state.drawer) app.insertAdjacentHTML('beforeend', renderAuditDrawer(state.drawer));
+      if (state.modal) {
+        const m=state.modal; let html='';
+        if(m.type==='add')html=renderAddModal(m);
+        if(m.type==='guard')html=renderGuardModal(m);
+        if(m.type==='apply')html=renderApplyModal(m);
+        if(m.type==='approve')html=renderApproveModal(m);
+        if(m.type==='reject')html=renderRejectModal(m);
+        if(m.type==='preview')html=renderPreviewModal(m);
+        if(m.type==='oauthPicker')html=renderOAuthPicker();
+        app.insertAdjacentHTML('beforeend',html);
+      }
+      if (state.notificationOpen && state.view==='creator') app.insertAdjacentHTML('beforeend',renderNotificationCenter());
+    }
+
+    function showToast(message,type='success'){
+      const root=document.getElementById('toast-root');const item=document.createElement('div');item.className=`toast ${type}`;item.innerHTML=`<span class="toast-dot">${type==='success'?'✓':type==='error'?'!':'i'}</span><span>${escapeHtml(message)}</span>`;root.appendChild(item);setTimeout(()=>item.remove(),3600);
+    }
+
+    render();
+  </script>
+</body>
+</html>

@@ -55,6 +55,8 @@ docs/
   testing-and-issue-tracking.md  测试与问题跟进方法
   requirements-overview.md       脱敏后的需求与验收概要
   source-manifest.md             资料来源与处理方式
+  pdfs/                          经授权原样归档的 PDF
+  presentations/                 经授权原样归档的 PPTX
 assets/                          脱敏后的预览图
 ```
 
@@ -84,7 +86,7 @@ GitHub 的文件浏览页面不会直接运行 HTML。本仓库保持 Private，
 ## 信息安全
 
 - `demos/` 与派生 Markdown 已做去标识化处理，示例邮箱使用 `example.com`。
-- `docs/pdfs/` 按仓库所有者要求保留原始 PDF，可能含测试信息、内部地址、截图和未公开需求。
+- `docs/pdfs/` 与 `docs/presentations/` 按仓库所有者要求保留原始 PDF/PPTX，可能含测试信息、内部地址、截图和未公开需求。
 - CSV、Base、ZIP、DOC/DOCX 与凭据文件仍被 `.gitignore` 阻止误提交。
 - 不要将本仓库改为 Public，也不要公开 Fork、Release 或 GitHub Pages。
 - Demo 中的姓名、邮箱、账号、时间和审核记录均为示例数据。
